@@ -1,0 +1,78 @@
+name: 🐛 Bug report
+description: Report a problem with the firmware, web UI, or Home Assistant integration
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill in as much detail as you can.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear description of what the bug is.
+      placeholder: When I do X, Y happens instead of Z...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: I expected...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      options:
+        - Firmware (flow measurement)
+        - Firmware (level/ultrasonic)
+        - Firmware (MQTT)
+        - Web UI
+        - Home Assistant integration
+        - Wiring / hardware
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: fw-version
+    attributes:
+      label: Firmware version
+      placeholder: e.g. 2.0
+    validations:
+      required: false
+
+  - type: input
+    id: hardware
+    attributes:
+      label: Hardware
+      description: Board, sensors, any deviations from the recommended setup
+      placeholder: Wemos D1 Mini, DN32, JSN-SR04T, 25m UTP cable...
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Serial Monitor / logs
+      description: Paste relevant output from the Serial Monitor (115200 baud) or HA logs.
+      render: shell
+    validations:
+      required: false

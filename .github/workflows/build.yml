@@ -1,0 +1,68 @@
+name: Build Firmware
+
+# Spustí se při push do main, při PR, a při vytvoření tagu (release)
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+    paths:
+      - 'firmware/**'
+      - '.github/workflows/build.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'firmware/**'
+  workflow_dispatch:  # umožní ruční spuštění z GitHub UI
+
+jobs:
+  build:
+    name: Compile ESP8266 firmware
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Arduino CLI
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Configure Arduino CLI & install ESP8266 core
+        run: |
+          arduino-cli config init --additional-urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp8266:esp8266
+
+      - name: Install libraries
+        run: |
+          arduino-cli lib install "PubSubClient"
+          arduino-cli lib install "ArduinoJson"
+          arduino-cli lib install "NewPing"
+
+      - name: Compile sketch
+        run: |
+          arduino-cli compile \
+            --fqbn esp8266:esp8266:d1_mini \
+            --output-dir ./build \
+            firmware/water_monitor
+
+      - name: Rename binary
+        run: |
+          cp ./build/water_monitor.ino.bin ./build/water_monitor_${{ github.sha }}.bin || true
+          ls -la ./build/
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-bin
+          path: ./build/*.bin
+          retention-days: 30
+
+      # Při vytvoření tagu (v1.0, v2.0...) přiloží .bin k release
+      - name: Attach binary to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./build/water_monitor.ino.bin
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
