@@ -1,0 +1,190 @@
+# ============================================================================
+# Water Monitor - Automatizace
+# ============================================================================
+# Použití:
+#   Možnost A: vlož přes UI - Nastavení → Automatizace a scény → 
+#              Vytvořit → tři tečky → Upravit v YAML → vlož jednu automatizaci
+#   Možnost B: do automations.yaml přidej celý obsah níže
+# 
+# UPRAV PRO SEBE:
+#   - 'notify.mobile_app_xxx' - nahraď názvem tvého mobilního zařízení
+#     (najdi v HA: Nastavení → Zařízení a služby → Mobile App)
+#   - hodnoty prahových hodnot upraviv podle potřeby
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# 1. NÍZKÁ HLADINA V NÁDRŽI (pod 10%)
+# ----------------------------------------------------------------------------
+- id: water_low_level_alert
+  alias: "🚨 Voda: Nízká hladina v nádrži"
+  description: "Notifikace když hladina klesne pod 10% (jednou denně)"
+  mode: single
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.naplneni_nadrze
+      below: 10
+      for:
+        minutes: 5  # musí trvat 5 min (aby nevznikaly falešné alerty z chybných měření)
+  condition:
+    # Notifikuj max jednou za 24 hodin (aby nespamovalo)
+    - condition: template
+      value_template: >
+        {{ (now() - (state_attr('automation.water_low_level_alert', 'last_triggered') or now() - timedelta(days=2))).total_seconds() > 86400 }}
+  action:
+    - service: notify.mobile_app_xxx  # ← UPRAV
+      data:
+        title: "⚠️ Nízká hladina vody"
+        message: >
+          Nádrž je naplněna jen z {{ states('sensor.naplneni_nadrze') }} %.
+          Zbývá přibližně {{ states('sensor.objem_v_nadrzi') }} L.
+        data:
+          tag: water_low
+          channel: water_alerts
+          importance: high
+          notification_icon: mdi:water-alert
+    
+    # Persistent notifikace v HA UI
+    - service: persistent_notification.create
+      data:
+        title: "Nízká hladina vody"
+        message: >
+          Nádrž je téměř prázdná ({{ states('sensor.naplneni_nadrze') }} %).
+          Objem: {{ states('sensor.objem_v_nadrzi') }} L.
+        notification_id: water_low_level
+
+# ----------------------------------------------------------------------------
+# 2. NÁDRŽ JE ZNOVU PLNÁ (po dešti)
+# ----------------------------------------------------------------------------
+- id: water_tank_filled
+  alias: "✅ Voda: Nádrž je opět plná"
+  description: "Notifikace když se nádrž naplnila po dešti (nad 90%)"
+  mode: single
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.naplneni_nadrze
+      above: 90
+      for:
+        minutes: 10
+  condition:
+    # Notifikuj jen pokud předtím byla pod 80% (aby to nezvonilo opakovaně)
+    - condition: template
+      value_template: >
+        {{ trigger.from_state.state | float(100) < 80 }}
+  action:
+    - service: notify.mobile_app_xxx  # ← UPRAV
+      data:
+        title: "💧 Nádrž naplněna"
+        message: >
+          Nádrž je teď z {{ states('sensor.naplneni_nadrze') }} %, 
+          {{ states('sensor.objem_v_nadrzi') }} L vody k dispozici.
+        data:
+          tag: water_full
+          notification_icon: mdi:water-check
+    
+    - service: persistent_notification.dismiss
+      data:
+        notification_id: water_low_level
+
+# ----------------------------------------------------------------------------
+# 3. VYSOKÁ DENNÍ SPOTŘEBA (víc než průměr)
+# ----------------------------------------------------------------------------
+- id: water_high_daily_usage
+  alias: "🚨 Voda: Vysoká denní spotřeba"
+  description: "Alert když je denní spotřeba 2× vyšší než 7-denní průměr"
+  mode: single
+  trigger:
+    - platform: template
+      value_template: >
+        {% set dnes = states('sensor.spotreba_dnes') | float(0) %}
+        {% set prumer = states('sensor.prumerna_denni_spotreba_7d') | float(0) %}
+        {{ prumer > 50 and dnes > prumer * 2 }}
+      for:
+        minutes: 10
+  condition:
+    # Nejdřív 18 hod dne (jinak by alert v 8:00 nemělo smysl - málo dat)
+    - condition: time
+      after: "18:00:00"
+    # Max jednou denně
+    - condition: template
+      value_template: >
+        {{ (now() - (state_attr('automation.water_high_daily_usage', 'last_triggered') or now() - timedelta(days=2))).total_seconds() > 43200 }}
+  action:
+    - service: notify.mobile_app_xxx  # ← UPRAV
+      data:
+        title: "💸 Vysoká spotřeba vody"
+        message: >
+          Dnes jsi spotřeboval {{ states('sensor.spotreba_dnes') }} L
+          (průměr za 7 dní: {{ states('sensor.prumerna_denni_spotreba_7d') | round(0) }} L).
+          Možný únik?
+        data:
+          tag: water_high_usage
+          notification_icon: mdi:water-alert
+
+# ----------------------------------------------------------------------------
+# 4. ČERPADLO BĚŽÍ DLOUHO (možný únik)
+# ----------------------------------------------------------------------------
+- id: water_pump_running_long
+  alias: "🚨 Voda: Čerpadlo běží dlouho"
+  description: "Alert když čerpadlo běží nepřetržitě déle než 30 minut"
+  mode: single
+  trigger:
+    - platform: state
+      entity_id: sensor.cerpadlo_aktivni
+      to: 'on'
+      for:
+        minutes: 30
+  action:
+    - service: notify.mobile_app_xxx  # ← UPRAV
+      data:
+        title: "⚠️ Čerpadlo běží dlouho"
+        message: >
+          Čerpadlo běží už 30+ minut, průtok {{ states('sensor.prutok_aktualni') }} L/min.
+          Hladina v nádrži: {{ states('sensor.naplneni_nadrze') }} %.
+          Zkontroluj, jestli někde neteče.
+        data:
+          tag: water_pump_long
+          notification_icon: mdi:water-pump
+
+# ----------------------------------------------------------------------------
+# 5. ESP OFFLINE
+# ----------------------------------------------------------------------------
+- id: water_esp_offline
+  alias: "🚨 Voda: ESP je offline"
+  description: "Alert když ESP přestane komunikovat"
+  mode: single
+  trigger:
+    - platform: state
+      entity_id: sensor.watertank_status
+      to: 'offline'
+      for:
+        minutes: 5
+  action:
+    - service: notify.mobile_app_xxx  # ← UPRAV
+      data:
+        title: "❌ Water Monitor offline"
+        message: "ESP je už 5 minut offline. Zkontroluj napájení nebo WiFi."
+        data:
+          tag: water_offline
+          notification_icon: mdi:wifi-off
+
+# ----------------------------------------------------------------------------
+# 6. ESP OPĚT ONLINE
+# ----------------------------------------------------------------------------
+- id: water_esp_online
+  alias: "✅ Voda: ESP je opět online"
+  description: "Notifikace když se ESP vrátí do provozu"
+  mode: single
+  trigger:
+    - platform: state
+      entity_id: sensor.watertank_status
+      to: 'online'
+  condition:
+    - condition: template
+      value_template: "{{ trigger.from_state.state == 'offline' }}"
+  action:
+    - service: notify.mobile_app_xxx  # ← UPRAV
+      data:
+        title: "✅ Water Monitor online"
+        message: "ESP je zase online."
+        data:
+          tag: water_online

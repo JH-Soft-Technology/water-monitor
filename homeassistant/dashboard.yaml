@@ -1,0 +1,246 @@
+# ============================================================================
+# Water Monitor - Lovelace Dashboard
+# ============================================================================
+# Použití:
+#   1. Otevři Home Assistant
+#   2. Boční menu → Nastavení → Dashboardy → vytvořit novou (Add Dashboard)
+#      nebo otevři existující v "Edit Dashboard" mode → "Edit in YAML"
+#   3. Vlož celý obsah níže (od 'title:')
+#   4. Ulož
+# 
+# Předpoklady:
+#   - MQTT integration je aktivní v HA
+#   - Z ESP přicházejí MQTT discovery zprávy, takže máš entity:
+#       sensor.prutok_aktualni
+#       sensor.objem_za_minutu
+#       sensor.objem_za_hodinu
+#       sensor.objem_celkem
+#       sensor.hladina_v_nadrzi
+#       sensor.naplneni_nadrze
+#       sensor.objem_v_nadrzi
+#       sensor.vzdalenost_senzor
+# 
+# Pokud máš jiné názvy entit (záleží na jazyce HA a tvém device_id),
+# najdi je v Vývojářské nástroje → Stavy a uprav v této YAML.
+# ============================================================================
+
+title: Voda
+views:
+  - title: Voda
+    path: voda
+    icon: mdi:water
+    type: sections
+    max_columns: 3
+    sections:
+      
+      # ========================================================================
+      # SEKCE 1: PŘEHLED NÁDRŽE
+      # ========================================================================
+      - type: grid
+        column_span: 1
+        cards:
+          - type: heading
+            heading: 💧 Stav nádrže
+            heading_style: title
+          
+          - type: gauge
+            entity: sensor.naplneni_nadrze
+            name: Naplnění
+            unit: '%'
+            min: 0
+            max: 100
+            severity:
+              green: 30
+              yellow: 15
+              red: 0
+            needle: true
+          
+          - type: entities
+            title: Detaily nádrže
+            show_header_toggle: false
+            entities:
+              - entity: sensor.objem_v_nadrzi
+                name: Objem v nádrži
+                icon: mdi:cup-water
+              - entity: sensor.hladina_v_nadrzi
+                name: Výška hladiny
+                icon: mdi:waves-arrow-up
+              - entity: sensor.vzdalenost_senzor
+                name: Vzdálenost od senzoru
+                icon: mdi:arrow-up-down
+      
+      # ========================================================================
+      # SEKCE 2: AKTUÁLNÍ PRŮTOK
+      # ========================================================================
+      - type: grid
+        column_span: 1
+        cards:
+          - type: heading
+            heading: 🚰 Průtok
+            heading_style: title
+          
+          - type: gauge
+            entity: sensor.prutok_aktualni
+            name: Aktuální průtok
+            unit: 'L/min'
+            min: 0
+            max: 80
+            severity:
+              green: 0
+              yellow: 50
+              red: 70
+            needle: true
+          
+          - type: entities
+            title: Spotřeba
+            show_header_toggle: false
+            entities:
+              - entity: sensor.objem_za_minutu
+                name: Za poslední minutu
+                icon: mdi:water
+              - entity: sensor.objem_za_hodinu
+                name: Za poslední hodinu
+                icon: mdi:water
+              - entity: sensor.objem_celkem
+                name: Celkem od startu
+                icon: mdi:counter
+              - type: divider
+              - entity: sensor.spotreba_dnes
+                name: Spotřebováno dnes
+                icon: mdi:calendar-today
+              - entity: sensor.spotreba_tento_tyden
+                name: Tento týden
+                icon: mdi:calendar-week
+              - entity: sensor.spotreba_tento_mesic
+                name: Tento měsíc
+                icon: mdi:calendar-month
+      
+      # ========================================================================
+      # SEKCE 3: VIZUALIZACE NÁDRŽE
+      # ========================================================================
+      - type: grid
+        column_span: 1
+        cards:
+          - type: heading
+            heading: 📊 Vizualizace
+            heading_style: title
+          
+          - type: vertical-stack
+            cards:
+              # Barová vizualizace hladiny (custom pomocí entity-filter)
+              - type: gauge
+                entity: sensor.hladina_v_nadrzi
+                name: Hladina
+                unit: 'cm'
+                min: 0
+                max: 173
+                severity:
+                  green: 50
+                  yellow: 25
+                  red: 0
+              
+              # Aktuální průtok bar
+              - type: glance
+                title: Status
+                columns: 2
+                entities:
+                  - entity: sensor.prutok_aktualni
+                    name: Průtok
+                  - entity: sensor.naplneni_nadrze
+                    name: Plnost
+      
+      # ========================================================================
+      # SEKCE 4: GRAFY PRŮTOKU (24h)
+      # ========================================================================
+      - type: grid
+        column_span: 3
+        cards:
+          - type: heading
+            heading: 📈 Průtok za 24 hodin
+            heading_style: title
+          
+          - type: history-graph
+            title: Aktuální průtok
+            hours_to_show: 24
+            refresh_interval: 60
+            entities:
+              - entity: sensor.prutok_aktualni
+                name: Průtok L/min
+      
+      # ========================================================================
+      # SEKCE 5: GRAFY HLADINY (7 dnů)
+      # ========================================================================
+      - type: grid
+        column_span: 3
+        cards:
+          - type: heading
+            heading: 📉 Hladina v nádrži (7 dnů)
+            heading_style: title
+          
+          - type: history-graph
+            title: Naplnění nádrže
+            hours_to_show: 168
+            refresh_interval: 600
+            entities:
+              - entity: sensor.naplneni_nadrze
+                name: Naplnění %
+              - entity: sensor.objem_v_nadrzi
+                name: Objem L
+      
+      # ========================================================================
+      # SEKCE 6: STATISTIKY SPOTŘEBY
+      # ========================================================================
+      - type: grid
+        column_span: 3
+        cards:
+          - type: heading
+            heading: 📊 Spotřeba (statistika)
+            heading_style: title
+          
+          - type: statistics-graph
+            title: Hodinová spotřeba (24 hodin)
+            chart_type: bar
+            period: hour
+            days_to_show: 1
+            stat_types:
+              - state
+            entities:
+              - sensor.objem_za_hodinu
+          
+          - type: statistics-graph
+            title: Denní spotřeba (30 dnů)
+            chart_type: bar
+            period: day
+            days_to_show: 30
+            stat_types:
+              - state
+            entities:
+              - sensor.spotreba_dnes
+      
+      # ========================================================================
+      # SEKCE 7: SYSTÉM
+      # ========================================================================
+      - type: grid
+        column_span: 3
+        cards:
+          - type: heading
+            heading: ⚙️ Systém
+            heading_style: subtitle
+          
+          - type: entities
+            title: Status zařízení
+            show_header_toggle: false
+            entities:
+              - type: section
+                label: Konfigurace
+              - entity: sensor.watertank_status
+                name: Online stav
+                icon: mdi:connection
+              - type: weblink
+                name: Web rozhraní ESP
+                url: http://watertank.local/
+                icon: mdi:web
+              - type: weblink
+                name: OTA Update
+                url: http://watertank.local/update
+                icon: mdi:cloud-upload

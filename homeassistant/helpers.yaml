@@ -1,0 +1,134 @@
+# ============================================================================
+# Water Monitor - Helpers, Utility Meters a Template sensors
+# ============================================================================
+# Použití:
+#   Vlož celý obsah do configuration.yaml v Home Assistant
+#   Nebo do samostatných souborů a includuj přes !include
+# 
+# Po vložení a uložení:
+#   - Vývojářské nástroje → YAML → Restart
+#   - nebo přímo "Restart Home Assistant"
+# 
+# Co to vytvoří:
+#   - sensor.spotreba_dnes        (denní spotřeba, resetuje se o půlnoci)
+#   - sensor.spotreba_tento_tyden (týdenní spotřeba, reset v pondělí)
+#   - sensor.spotreba_tento_mesic (měsíční spotřeba, reset 1. dne)
+#   - sensor.prumerny_prutok_5min (klouzavý průměr pro detekci úniků)
+#   - sensor.cerpadlo_aktivni     (True pokud teče > 1 L/min)
+#   - sensor.spotreba_predchozi_24h_avg (průměr posledních 24h pro porovnání)
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# UTILITY METERS - automaticky resetované čítače spotřeby
+# ----------------------------------------------------------------------------
+utility_meter:
+  spotreba_dnes:
+    name: Spotřeba dnes
+    source: sensor.objem_celkem
+    cycle: daily
+    
+  spotreba_tento_tyden:
+    name: Spotřeba tento týden
+    source: sensor.objem_celkem
+    cycle: weekly
+    
+  spotreba_tento_mesic:
+    name: Spotřeba tento měsíc
+    source: sensor.objem_celkem
+    cycle: monthly
+
+# ----------------------------------------------------------------------------
+# TEMPLATE SENSORS - odvozené hodnoty
+# ----------------------------------------------------------------------------
+template:
+  - sensor:
+      # Indikace, jestli čerpadlo právě teče
+      - name: "Čerpadlo aktivní"
+        unique_id: cerpadlo_aktivni
+        state: >
+          {% if states('sensor.prutok_aktualni') | float(0) > 1.0 %}
+            on
+          {% else %}
+            off
+          {% endif %}
+        icon: >
+          {% if states('sensor.prutok_aktualni') | float(0) > 1.0 %}
+            mdi:water-pump
+          {% else %}
+            mdi:water-pump-off
+          {% endif %}
+      
+      # Kolik dnů zbývá při aktuálním tempu spotřeby
+      - name: "Zbývajících dnů vody"
+        unique_id: zbyvajicich_dnu_vody
+        unit_of_measurement: "dní"
+        icon: mdi:calendar-clock
+        state: >
+          {% set objem = states('sensor.objem_v_nadrzi') | float(0) %}
+          {% set denni_spotreba = states('sensor.spotreba_dnes') | float(0) %}
+          {% if denni_spotreba > 0.1 %}
+            {{ (objem / denni_spotreba) | round(0) }}
+          {% else %}
+            unavailable
+          {% endif %}
+      
+      # Procento dešťové vody (předpoklad - kolik z denní spotřeby je z nádrže)
+      - name: "Náplň pro odhad"
+        unique_id: naplneni_litry_kategorie
+        state: >
+          {% set p = states('sensor.naplneni_nadrze') | float(0) %}
+          {% if p > 75 %}
+            Plná
+          {% elif p > 50 %}
+            Hodně
+          {% elif p > 25 %}
+            Středně
+          {% elif p > 10 %}
+            Málo
+          {% else %}
+            Kriticky málo
+          {% endif %}
+        icon: >
+          {% set p = states('sensor.naplneni_nadrze') | float(0) %}
+          {% if p > 75 %}
+            mdi:water
+          {% elif p > 50 %}
+            mdi:water-percent
+          {% elif p > 25 %}
+            mdi:water-percent-alert
+          {% elif p > 10 %}
+            mdi:water-alert
+          {% else %}
+            mdi:water-off
+          {% endif %}
+
+# ----------------------------------------------------------------------------
+# STATISTICS sensor - klouzavý průměr (detekce abnormální spotřeby)
+# ----------------------------------------------------------------------------
+sensor:
+  - platform: statistics
+    name: "Průměrný průtok 5 min"
+    unique_id: prumerny_prutok_5min
+    entity_id: sensor.prutok_aktualni
+    state_characteristic: mean
+    max_age:
+      minutes: 5
+    sampling_size: 300
+  
+  - platform: statistics
+    name: "Maximální průtok 24h"
+    unique_id: maximalni_prutok_24h
+    entity_id: sensor.prutok_aktualni
+    state_characteristic: value_max
+    max_age:
+      hours: 24
+    sampling_size: 1440
+  
+  - platform: statistics
+    name: "Průměrná denní spotřeba 7 dní"
+    unique_id: prumerna_denni_spotreba_7d
+    entity_id: sensor.spotreba_dnes
+    state_characteristic: mean
+    max_age:
+      days: 7
+    sampling_size: 168

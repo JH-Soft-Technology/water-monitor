@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Water Monitor</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>💧 Water Monitor</h1>
+    <div id="status-badges">
+      <span id="badge-wifi" class="badge">WiFi: ...</span>
+      <span id="badge-mqtt" class="badge">MQTT: ...</span>
+    </div>
+  </header>
+  
+  <nav>
+    <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+    <button class="tab-btn" data-tab="config">⚙️ Konfigurace</button>
+    <button class="tab-btn" data-tab="calibration">📏 Kalibrace</button>
+    <button class="tab-btn" data-tab="system">🔧 Systém</button>
+  </nav>
+  
+  <main>
+    <!-- DASHBOARD -->
+    <section id="tab-dashboard" class="tab-content active">
+      <h2>Live data</h2>
+      
+      <div class="card">
+        <h3>Průtok</h3>
+        <div class="metric-row">
+          <div class="metric">
+            <span class="metric-value" id="flow-lpm">--</span>
+            <span class="metric-unit">L/min</span>
+          </div>
+          <div class="metric">
+            <span class="metric-value" id="total-volume">--</span>
+            <span class="metric-unit">L celkem</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h3>Nádrž</h3>
+        <div class="tank-visual">
+          <div class="tank-outer">
+            <div class="tank-fill" id="tank-fill" style="height: 0%"></div>
+            <div class="tank-label" id="tank-percent">--%</div>
+          </div>
+          <div class="tank-info">
+            <div><strong>Objem:</strong> <span id="tank-volume">--</span> L</div>
+            <div><strong>Hladina:</strong> <span id="tank-level">--</span> cm</div>
+            <div><strong>Vzdálenost:</strong> <span id="tank-distance">--</span> cm</div>
+          </div>
+        </div>
+      </div>
+      
+      <p class="hint">Aktualizováno každé 2 sekundy</p>
+    </section>
+    
+    <!-- KONFIGURACE -->
+    <section id="tab-config" class="tab-content">
+      <h2>Konfigurace</h2>
+      
+      <div class="card">
+        <h3>WiFi (STA)</h3>
+        <label>SSID
+          <div class="input-with-btn">
+            <input type="text" id="cfg-wifi-ssid" placeholder="MojeSiti">
+            <button type="button" id="btn-scan-wifi">🔍 Najít</button>
+          </div>
+        </label>
+        <select id="cfg-wifi-list" style="display:none">
+          <option value="">-- vybrat ze seznamu --</option>
+        </select>
+        <label>Heslo
+          <input type="password" id="cfg-wifi-password" placeholder="(necháš prázdné = nezměnit)">
+        </label>
+      </div>
+      
+      <div class="card">
+        <h3>MQTT Broker</h3>
+        <label>Server (IP nebo hostname)
+          <input type="text" id="cfg-mqtt-server" placeholder="192.168.1.100">
+        </label>
+        <label>Port
+          <input type="number" id="cfg-mqtt-port" value="1883">
+        </label>
+        <label>Username
+          <input type="text" id="cfg-mqtt-user">
+        </label>
+        <label>Password
+          <input type="password" id="cfg-mqtt-password" placeholder="(necháš prázdné = nezměnit)">
+        </label>
+        <label>Client ID
+          <input type="text" id="cfg-mqtt-client-id">
+        </label>
+      </div>
+      
+      <div class="card">
+        <h3>Zařízení</h3>
+        <label>Název (v Home Assistant)
+          <input type="text" id="cfg-device-name">
+        </label>
+        <label>ID (prefix MQTT topic, jen [a-z0-9_])
+          <input type="text" id="cfg-device-id">
+        </label>
+      </div>
+      
+      <div class="card">
+        <h3>Nádrž - geometrie</h3>
+        <label>Vzdálenost senzor → hladina při PLNÉ nádrži [cm]
+          <input type="number" id="cfg-tank-full" step="0.1">
+        </label>
+        <label>Vzdálenost senzor → hladina při PRÁZDNÉ nádrži [cm]
+          <input type="number" id="cfg-tank-empty" step="0.1">
+        </label>
+        <label>Maximální objem nádrže [L]
+          <input type="number" id="cfg-tank-max">
+        </label>
+      </div>
+      
+      <button id="btn-save-config" class="btn-primary">💾 Uložit konfiguraci</button>
+      <p class="hint">Po uložení je doporučen restart (Systém → Restartovat)</p>
+    </section>
+    
+    <!-- KALIBRACE -->
+    <section id="tab-calibration" class="tab-content">
+      <h2>Kalibrační tabulka</h2>
+      
+      <div class="card">
+        <h3>Aktuální stav</h3>
+        <p>Hladina: <strong id="cal-current-level">--</strong> cm</p>
+        <p>Vypočtený objem: <strong id="cal-current-volume">--</strong> L</p>
+      </div>
+      
+      <div class="card">
+        <h3>Přidat bod</h3>
+        <p class="hint">
+          Postup: vyčerpej čerpadlem známé množství, zaznamenej hladinu po, 
+          a přidej zde bod (hladina, kolik vody zbývá v nádrži).
+        </p>
+        <div class="metric-row">
+          <label style="flex:1">Hladina [cm]
+            <div class="input-with-btn">
+              <input type="number" id="cal-new-level" step="0.1">
+              <button type="button" id="btn-use-current">⬇ Použít aktuální</button>
+            </div>
+          </label>
+          <label style="flex:1">Objem v nádrži [L]
+            <input type="number" id="cal-new-volume" step="1">
+          </label>
+        </div>
+        <button id="btn-add-point" class="btn-primary">➕ Přidat bod</button>
+      </div>
+      
+      <div class="card">
+        <h3>Body v kalibraci</h3>
+        <table id="cal-table">
+          <thead>
+            <tr><th>#</th><th>Hladina [cm]</th><th>Objem [L]</th><th>Akce</th></tr>
+          </thead>
+          <tbody id="cal-tbody"></tbody>
+        </table>
+        <button id="btn-reset-cal" class="btn-danger">🔄 Reset na lineární</button>
+      </div>
+    </section>
+    
+    <!-- SYSTÉM -->
+    <section id="tab-system" class="tab-content">
+      <h2>Systém</h2>
+      
+      <div class="card">
+        <h3>Informace</h3>
+        <table>
+          <tr><td>FW verze</td><td id="sys-fw">--</td></tr>
+          <tr><td>Uptime</td><td id="sys-uptime">--</td></tr>
+          <tr><td>Free heap</td><td id="sys-heap">--</td></tr>
+          <tr><td>STA IP</td><td id="sys-sta-ip">--</td></tr>
+          <tr><td>STA SSID</td><td id="sys-sta-ssid">--</td></tr>
+          <tr><td>Signál (RSSI)</td><td id="sys-rssi">--</td></tr>
+          <tr><td>AP IP</td><td id="sys-ap-ip">--</td></tr>
+        </table>
+      </div>
+      
+      <div class="card">
+        <h3>Firmware update</h3>
+        <p class="hint">Otevři <a href="/update" target="_blank">/update</a> pro nahrání nového .bin firmwaru.</p>
+      </div>
+      
+      <div class="card">
+        <h3>Restart</h3>
+        <button id="btn-restart" class="btn-danger">🔄 Restartovat ESP</button>
+      </div>
+    </section>
+  </main>
+  
+  <div id="toast" class="toast"></div>
+  
+  <script src="/app.js"></script>
+</body>
+</html>

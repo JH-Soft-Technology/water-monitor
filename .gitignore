@@ -1,0 +1,39 @@
+# Arduino build výstupy
+*.bin
+*.elf
+*.hex
+*.map
+build/
+.build/
+
+# Arduino IDE
+*.bak
+.theia/
+
+# PlatformIO (kdyby někdo používal)
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Lokální konfigurace s hesly (kdyby někdo dělal hardcoded variantu)
+secrets.h
+credentials.h
+config_local.h
+
+# LittleFS image
+*.littlefs
+*.mklittlefs
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editory
+.vscode/
+.idea/
+*.swp
+*~
+
+# Logy
+*.log
