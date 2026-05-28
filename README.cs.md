@@ -124,7 +124,7 @@ Stáhni [arduino-littlefs-upload](https://github.com/earlephilhower/arduino-litt
 4. Restartuj (záložka Systém)
 5. ESP se připojí do domácí sítě; pokračuj kalibrací
 
-Detailní návod: [`firmware/water_monitor` README](firmware/water_monitor/README.md)
+Detailní návod: [`firmware/water_monitor` README](firmware/water_monitor/README.cs.md)
 
 ---
 
@@ -150,7 +150,7 @@ Repozitář navíc obsahuje:
 - **Helpers** (`homeassistant/helpers.yaml`) — denní/týdenní/měsíční spotřeba, odhad zbývajících dnů
 - **Automatizace** (`homeassistant/automations.yaml`) — notifikace na nízkou hladinu, abnormální spotřebu, offline ESP
 
-Návod: [`homeassistant/README.md`](homeassistant/README.md)
+Návod: [`homeassistant/README.md`](homeassistant/README.cs.md)
 
 ---
 
