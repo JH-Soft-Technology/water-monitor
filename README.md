@@ -73,26 +73,32 @@ water-monitor/
 | Component | Description | Approx. price |
 |---|---|---|
 | Wemos D1 Mini | ESP8266 development board | ~$4 |
-| DN32 flow meter | Pulse, 1–120 L/min, `F = 4.5 × Q` | ~$11 |
+| **DC Power Shield** (7-24 V) | Sandwich shield with integrated step-down for Wemos | ~$2 |
+| **12 V / 1 A switching PSU** | Single power source for the whole system | ~$5 |
+| DN32 flow meter | Pulse, 1–120 L/min, `F = 4.5 × Q` (powered with 12 V) | ~$11 |
 | JSN-SR04T | Ultrasonic distance sensor, IP67 probe | ~$7 |
 | PC817 optocoupler (module) | Galvanic signal isolation | ~$2 |
-| Resistors 10 kΩ + 20 kΩ | Voltage divider for ECHO pin (5 V → 3.3 V) | ~$0.5 |
+| Mini step-down 12 V → 5 V | Local power for JSN-SR04T in the enclosure | ~$1.5 |
 | Resistor 1 kΩ | Series resistor on flow meter output | ~$0.1 |
 | Capacitor 100 nF | Power supply stabilization at the sensor | ~$0.1 |
 | Capacitor 100 nF X2 (275 V AC) | Pump noise suppression | ~$1.5 |
 | Ferrite core | On the pump's power cable | ~$2 |
 
+> 💡 **v2.1 architecture (December 2025):** A single 12 V supply powers everything. The Wemos is fed through the DC Power Shield (7-24 V input), the DN32 sensor runs on 12 V directly (optimal LED current in the PC817), and the JSN-SR04T is powered locally with 5 V via a mini step-down in its enclosure. Compared to v2.0 this eliminates the LM2596 step-down, the 10k+20k voltage divider for ECHO, and the dual power source (USB + ?).
+
 ### Pin wiring (Wemos D1 Mini)
 
 | Pin | GPIO | Function | Connection |
 |---|---|---|---|
-| `D2` | GPIO4 | Flow meter input | PC817 optocoupler OUT |
-| `D5` | GPIO14 | Ultrasonic TRIG | JSN-SR04T TRIG (direct) |
-| `D6` | GPIO12 | Ultrasonic ECHO | ECHO via 10k+20k divider |
-| `5V` | — | 5 V power | Sensor VCC |
-| `GND` | — | Common ground | GND of everything |
+| `+` shield terminal | — | 12 V input | Main 12 V PSU |
+| `−` shield terminal | — | GND | Main PSU + UTP GR pair |
+| `D2` | GPIO4 | Flow meter input | PC817 optocoupler V1 |
+| `D5` | GPIO14 | Ultrasonic TRIG | JSN-SR04T TRIG via UTP BR |
+| `D6` | GPIO12 | Ultrasonic ECHO | JSN-SR04T ECHO via UTP BR/W (direct, no divider) |
+| `5V` | — | 5 V output (from shield) | not used externally — supplies sensors via UTP if needed |
+| `GND` | — | Common ground | PC817 G (out), JSN-SR04T GND |
 
-> ⚠️ **The ECHO pin MUST go through a voltage divider!** The JSN-SR04T outputs 5 V, while the ESP8266 tolerates max 3.3 V.
+> ✅ **No voltage divider needed for ECHO** — the JSN-SR04T is now powered with 5 V (not 12 V), so its ECHO signal is at most 5 V, which is safe for the ESP8266 GPIO.
 
 Detailed schematics are in `docs/wiring_diagram.html` (schematic) and `docs/wiring_fritzing.html` (pictorial).
 
