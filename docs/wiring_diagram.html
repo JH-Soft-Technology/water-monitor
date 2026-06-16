@@ -2,13 +2,14 @@
 <html lang="cs">
 <head>
 <meta charset="UTF-8">
-<title>Water Monitor - Wiring Diagram</title>
+<title>Water Monitor - Wiring Diagram v2 (12V architecture)</title>
 <style>
   body { font-family: -apple-system, sans-serif; background: #f8fafc; padding: 20px; color: #1e293b; }
   h1 { color: #0284c7; }
   h2 { color: #0369a1; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 30px; }
   svg { background: white; border: 1px solid #e2e8f0; border-radius: 8px; display: block; margin: 10px 0; max-width: 100%; height: auto; }
   .note { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin: 16px 0; border-radius: 4px; }
+  .note-info { background: #dbeafe; border-left: 4px solid #3b82f6; padding: 12px; margin: 16px 0; border-radius: 4px; }
   .legend { background: #f1f5f9; padding: 12px; border-radius: 6px; margin: 12px 0; }
   .legend span { display: inline-block; margin-right: 16px; font-size: 0.9rem; }
   .color-swatch { display: inline-block; width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; border: 1px solid #cbd5e1; }
@@ -16,26 +17,40 @@
   table { border-collapse: collapse; margin: 10px 0; }
   td, th { padding: 6px 12px; border: 1px solid #e2e8f0; font-size: 0.9rem; }
   th { background: #f1f5f9; }
+  .version { background: #16a34a; color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.85rem; display: inline-block; }
 </style>
 </head>
 <body>
 
-<h1>💧 Water Monitor – Wiring Diagram</h1>
-<p>Kompletní zapojení: Wemos D1 Mini + DN32 průtokoměr (přes 30 m UTP Cat-6 + PC817 optočlen) + JSN-SR04T ultrazvuk + odrušení čerpadla Gardena.</p>
+<h1>💧 Water Monitor – Wiring Diagram <span class="version">v2 - 12V architecture</span></h1>
+<p>Zjednodušená architektura: <strong>jeden 12V zdroj</strong>, Wemos s Power Shieldem (7-24V vstup), senzor DN32 napájený 12V přímo.</p>
+
+<div class="note-info">
+  <strong>🆕 Co se změnilo proti původnímu plánu:</strong>
+  <ul style="margin-top: 8px;">
+    <li>✅ Wemos napájen 12V přes <strong>DC Power Shield</strong> (7-24V vstup, integrovaný step-down)</li>
+    <li>✅ Senzor DN32 napájen <strong>12 V</strong> místo 5V — optimální proud LED v modulu PC817</li>
+    <li>✅ JSN-SR04T napájen <strong>5 V z pinu Wemos</strong> (= výstup Power Shieldu)</li>
+    <li>❌ <strong>Není potřeba dělič napětí na ECHO</strong>! (signál ze SR04T je už proporcionální napájení = max 5 V → bezpečné pro Wemos)</li>
+    <li>❌ Externí step-down pro Wemos zbytečný (Power Shield to udělá za nás)</li>
+    <li>💡 LM2596 použijeme jen lokálně v krabičce u ultrazvuku pro 5V napájení JSN-SR04T</li>
+    <li>❌ Druhý napájecí zdroj (USB) odpadá</li>
+  </ul>
+</div>
 
 <div class="legend">
   <strong>Barvy vodičů UTP Cat-6:</strong>
-  <span><span class="color-swatch" style="background:#f97316"></span>Oranžová (OR) - VCC</span>
-  <span><span class="color-swatch" style="background:#fed7aa"></span>OR/BÍ - VCC paralelně</span>
+  <span><span class="color-swatch" style="background:#f97316"></span>Oranžová (OR) - +12V</span>
+  <span><span class="color-swatch" style="background:#fed7aa"></span>OR/BÍ - +12V paralelně</span>
   <span><span class="color-swatch" style="background:#22c55e"></span>Zelená (GR) - GND</span>
   <span><span class="color-swatch" style="background:#bbf7d0"></span>GR/BÍ - GND paralelně</span>
-  <span><span class="color-swatch" style="background:#3b82f6"></span>Modrá (BL) - signál</span>
+  <span><span class="color-swatch" style="background:#3b82f6"></span>Modrá (BL) - signál (12V)</span>
   <span><span class="color-swatch" style="background:#bfdbfe"></span>BL/BÍ - signál GND</span>
 </div>
 
 <h2>1. Celkové schéma</h2>
 
-<svg viewBox="0 0 1200 700" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 1200 750" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
       <path d="M0,0 L0,6 L9,3 z" fill="#64748b"/>
@@ -49,7 +64,7 @@
   <rect x="40" y="50" width="240" height="100" fill="#dbeafe" stroke="#3b82f6" stroke-width="2" rx="6"/>
   <text x="160" y="75" text-anchor="middle" font-weight="bold" font-size="14">Průtokoměr DN32</text>
   <text x="160" y="93" text-anchor="middle" font-size="11" fill="#64748b">F = 4.5 × Q (Hz / l/min)</text>
-  <text x="160" y="108" text-anchor="middle" font-size="11" fill="#64748b">Napájení 5V, výstup PWM</text>
+  <text x="160" y="108" text-anchor="middle" font-size="11" fill="#16a34a" font-weight="bold">Napájení 12V (3.5-24V rozsah)</text>
   
   <!-- Vodiče senzoru -->
   <circle cx="80" cy="140" r="4" fill="#ef4444"/>
@@ -58,7 +73,7 @@
   
   <circle cx="160" cy="140" r="4" fill="#fbbf24"/>
   <text x="160" y="135" text-anchor="middle" font-size="10">OUT</text>
-  <text x="160" y="158" text-anchor="middle" font-size="9" fill="#a16207">žlutá</text>
+  <text x="160" y="158" text-anchor="middle" font-size="9" fill="#a16207">žlutá (12V signál)</text>
   
   <circle cx="240" cy="140" r="4" fill="#1e293b"/>
   <text x="240" y="135" text-anchor="middle" font-size="10">GND</text>
@@ -75,7 +90,7 @@
   <rect x="40" y="300" width="240" height="100" fill="#dbeafe" stroke="#3b82f6" stroke-width="2" rx="6"/>
   <text x="160" y="325" text-anchor="middle" font-weight="bold" font-size="14">JSN-SR04T ultrazvuk</text>
   <text x="160" y="343" text-anchor="middle" font-size="11" fill="#64748b">Sonda IP67 v nádrži</text>
-  <text x="160" y="358" text-anchor="middle" font-size="11" fill="#64748b">Modul v krabičce u poklopu</text>
+  <text x="160" y="358" text-anchor="middle" font-size="11" fill="#16a34a" font-weight="bold">Napájení 5V z Power Shieldu</text>
   
   <circle cx="80" cy="390" r="4" fill="#ef4444"/>
   <text x="80" y="385" text-anchor="middle" font-size="10">VCC 5V</text>
@@ -107,26 +122,31 @@
   
   <!-- UTP páry vizualizované jako kroucené páry -->
   <g stroke-width="2" fill="none">
-    <!-- VCC pár (oranžový) -->
+    <!-- +12V pár (oranžový) -->
     <path d="M 285 110 Q 350 105, 415 115 T 545 110 T 670 115 T 800 110 T 920 115" stroke="#f97316"/>
     <path d="M 285 120 Q 350 125, 415 115 T 545 120 T 670 115 T 800 120 T 920 115" stroke="#fed7aa"/>
-    <text x="600" y="100" text-anchor="middle" font-size="10" fill="#c2410c" font-weight="bold">Pár 1 OR + OR/BÍ → VCC 5V</text>
+    <text x="600" y="100" text-anchor="middle" font-size="11" fill="#c2410c" font-weight="bold">Pár 1 OR + OR/BÍ → +12V (paralelně)</text>
 
     <!-- GND pár (zelený) -->
     <path d="M 285 220 Q 350 215, 415 225 T 545 220 T 670 225 T 800 220 T 920 225" stroke="#22c55e"/>
     <path d="M 285 230 Q 350 235, 415 225 T 545 230 T 670 225 T 800 230 T 920 225" stroke="#bbf7d0"/>
-    <text x="600" y="245" text-anchor="middle" font-size="10" fill="#15803d" font-weight="bold">Pár 2 GR + GR/BÍ → GND</text>
+    <text x="600" y="245" text-anchor="middle" font-size="11" fill="#15803d" font-weight="bold">Pár 2 GR + GR/BÍ → GND (paralelně)</text>
     
     <!-- Signál pár (modrý) - jen jeden, druhý jako zem signálu -->
     <path d="M 285 165 Q 350 160, 415 170 T 545 165 T 670 170 T 800 165 T 920 170" stroke="#3b82f6"/>
     <path d="M 285 180 Q 350 185, 415 175 T 545 180 T 670 175 T 800 180 T 920 175" stroke="#bfdbfe"/>
-    <text x="600" y="200" text-anchor="middle" font-size="10" fill="#1e3a8a" font-weight="bold">Pár 3 BL → signál, BL/BÍ → signal GND</text>
+    <text x="600" y="200" text-anchor="middle" font-size="11" fill="#1e3a8a" font-weight="bold">Pár 3 BL → 12V signál, BL/BÍ → signal GND</text>
+
+    <!-- Pár 4 - rezerva nebo TRIG/ECHO -->
+    <path d="M 285 280 Q 350 275, 415 285 T 545 280 T 670 285 T 800 280 T 920 285" stroke="#a16207"/>
+    <path d="M 285 290 Q 350 295, 415 285 T 545 290 T 670 285 T 800 290 T 920 285" stroke="#fbbf24"/>
+    <text x="600" y="315" text-anchor="middle" font-size="11" fill="#92400e" font-weight="bold">Pár 4 BR + BR/BÍ → TRIG + ECHO ultrazvuku</text>
   </g>
 
   <!-- Indikace dlouhého kabelu -->
-  <line x1="500" y1="320" x2="700" y2="320" stroke="#64748b" stroke-dasharray="4,4"/>
-  <text x="600" y="335" text-anchor="middle" font-size="13" fill="#64748b" font-style="italic">≈ 30 metrů kroucených párů</text>
-  <text x="600" y="355" text-anchor="middle" font-size="11" fill="#64748b">v plastové chráničce, vedle CYKY-J</text>
+  <line x1="500" y1="350" x2="700" y2="350" stroke="#64748b" stroke-dasharray="4,4"/>
+  <text x="600" y="365" text-anchor="middle" font-size="13" fill="#64748b" font-style="italic">≈ 30 metrů kroucených párů</text>
+  <text x="600" y="385" text-anchor="middle" font-size="11" fill="#64748b">v plastové chráničce, vedle CYKY-J</text>
 
   <!-- Ferrit na CYKY -->
   <ellipse cx="600" cy="500" rx="40" ry="15" fill="#1e293b" opacity="0.3"/>
@@ -135,319 +155,305 @@
   <text x="600" y="525" text-anchor="middle" font-size="10" fill="#92400e">CYKY-J 1.5mm² → 230V</text>
 
   <!-- ===== Pravá strana: ROZVADĚČ ===== -->
-  <text x="1050" y="25" text-anchor="middle" font-size="16" font-weight="bold" fill="#0369a1">V rozvaděči (suchá strana)</text>
+  <text x="1050" y="25" text-anchor="middle" font-size="16" font-weight="bold" fill="#0369a1">V rozvaděči</text>
+
+  <!-- 12V zdroj -->
+  <rect x="920" y="50" width="200" height="60" fill="#fef9c3" stroke="#854d0e" stroke-width="2" rx="6"/>
+  <text x="1020" y="72" text-anchor="middle" font-weight="bold" font-size="13">12V/1A síťový zdroj</text>
+  <text x="1020" y="90" text-anchor="middle" font-size="11" fill="#64748b">spínaný adaptér do zásuvky</text>
+  <text x="940" y="105" font-size="10">+12V</text>
+  <text x="1085" y="105" font-size="10">GND</text>
 
   <!-- PC817 modul -->
-  <rect x="920" y="120" width="200" height="100" fill="#fce7f3" stroke="#ec4899" stroke-width="2" rx="6"/>
-  <text x="1020" y="145" text-anchor="middle" font-weight="bold" font-size="13">Modul PC817</text>
-  <text x="1020" y="162" text-anchor="middle" font-size="10" fill="#64748b">galvanická izolace 5kV</text>
-  <text x="1020" y="178" text-anchor="middle" font-size="10" fill="#64748b">limit 3 kHz (max 540 Hz)</text>
-  <text x="940" y="200" font-size="9">IN+</text>
-  <text x="940" y="212" font-size="9">IN-</text>
-  <text x="1085" y="200" font-size="9">OUT</text>
-  <text x="1085" y="212" font-size="9">GND</text>
-  <text x="1085" y="195" font-size="9">VCC</text>
+  <rect x="920" y="130" width="200" height="80" fill="#fce7f3" stroke="#ec4899" stroke-width="2" rx="6"/>
+  <text x="1020" y="150" text-anchor="middle" font-weight="bold" font-size="12">Modul PC817</text>
+  <text x="1020" y="165" text-anchor="middle" font-size="10" fill="#64748b">galvanická izolace 5kV</text>
+  <text x="935" y="185" font-size="9">IN</text>
+  <text x="935" y="200" font-size="9">G(vst.)</text>
+  <text x="1095" y="185" font-size="9">V1</text>
+  <text x="1095" y="200" font-size="9">G(výs.)</text>
 
-  <!-- Wemos D1 Mini -->
-  <rect x="920" y="280" width="200" height="280" fill="#dcfce7" stroke="#16a34a" stroke-width="2" rx="6"/>
-  <text x="1020" y="305" text-anchor="middle" font-weight="bold" font-size="14">Wemos D1 Mini</text>
-  <text x="1020" y="322" text-anchor="middle" font-size="10" fill="#64748b">ESP8266</text>
+  <!-- Wemos + Power Shield sendvič -->
+  <rect x="920" y="240" width="200" height="280" fill="#dcfce7" stroke="#16a34a" stroke-width="2" rx="6"/>
+  <text x="1020" y="262" text-anchor="middle" font-weight="bold" font-size="14">Wemos D1 Mini</text>
+  <text x="1020" y="278" text-anchor="middle" font-size="11" fill="#16a34a" font-weight="bold">+ Power Shield (7-24V)</text>
+  
+  <!-- Svorkovnice power shieldu -->
+  <rect x="940" y="290" width="60" height="20" fill="#16a34a" stroke="#14532d"/>
+  <text x="945" y="304" font-size="9" fill="white">+</text>
+  <text x="985" y="304" font-size="9" fill="white">−</text>
+  <text x="970" y="285" text-anchor="middle" font-size="8" fill="#64748b">svorka 12V</text>
   
   <!-- Piny Wemos -->
   <g font-size="11">
-    <circle cx="940" cy="345" r="3" fill="#ef4444"/><text x="950" y="349">5V (Vin/VU)</text>
-    <circle cx="940" cy="365" r="3" fill="#fbbf24"/><text x="950" y="369">3V3</text>
-    <circle cx="940" cy="385" r="3" fill="#1e293b"/><text x="950" y="389">GND</text>
-    <circle cx="940" cy="410" r="3" fill="#3b82f6"/><text x="950" y="414">D2 (GPIO4) — flow</text>
-    <circle cx="940" cy="435" r="3" fill="#a855f7"/><text x="950" y="439">D5 (GPIO14) — TRIG</text>
-    <circle cx="940" cy="460" r="3" fill="#06b6d4"/><text x="950" y="464">D6 (GPIO12) — ECHO</text>
+    <circle cx="940" cy="335" r="3" fill="#ef4444"/><text x="950" y="339">5V (výstup shieldu)</text>
+    <circle cx="940" cy="358" r="3" fill="#fbbf24"/><text x="950" y="362">3V3</text>
+    <circle cx="940" cy="381" r="3" fill="#1e293b"/><text x="950" y="385">GND</text>
+    <circle cx="940" cy="408" r="3" fill="#3b82f6"/><text x="950" y="412">D2 — flow signal</text>
+    <circle cx="940" cy="435" r="3" fill="#a855f7"/><text x="950" y="439">D5 — TRIG</text>
+    <circle cx="940" cy="460" r="3" fill="#06b6d4"/><text x="950" y="464">D6 — ECHO (přímo!)</text>
     
-    <text x="950" y="495" font-style="italic" fill="#64748b">USB napájení 5V/1A</text>
-    <text x="950" y="513" font-style="italic" fill="#64748b">— microUSB kabel</text>
-    <text x="950" y="540" font-weight="bold" fill="#16a34a">WiFi → MQTT → HA</text>
+    <text x="950" y="495" font-weight="bold" fill="#16a34a">WiFi → MQTT → HA</text>
   </g>
-
-  <!-- Dělič napětí pro ECHO -->
-  <rect x="780" y="380" width="120" height="80" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3,3" rx="4"/>
-  <text x="840" y="398" text-anchor="middle" font-size="10" font-weight="bold">Dělič ECHO</text>
-  <text x="840" y="414" text-anchor="middle" font-size="9">R1 = 10 kΩ</text>
-  <text x="840" y="428" text-anchor="middle" font-size="9">R2 = 20 kΩ</text>
-  <text x="840" y="445" text-anchor="middle" font-size="9" fill="#64748b">5V → 3.3V</text>
 
   <!-- Propojky uvnitř rozvaděče -->
   <g stroke-width="1.5" fill="none">
-    <!-- VCC do Wemos 5V -->
-    <line x1="920" y1="115" x2="900" y2="115" stroke="#f97316"/>
-    <path d="M 900 115 L 870 115 L 870 345 L 940 345" stroke="#ef4444"/>
+    <!-- 12V zdroj +12V do svorek shieldu -->
+    <line x1="940" y1="105" x2="940" y2="125" stroke="#ef4444" stroke-width="2.5"/>
+    <line x1="940" y1="125" x2="900" y2="125" stroke="#ef4444" stroke-width="2.5"/>
+    <line x1="900" y1="125" x2="900" y2="290" stroke="#ef4444" stroke-width="2.5"/>
+    <line x1="900" y1="290" x2="952" y2="290" stroke="#ef4444" stroke-width="2.5"/>
     
-    <!-- VCC z Wemos 5V do PC817 modulu -->
-    <path d="M 940 345 L 880 345 L 880 195 L 1085 195" stroke="#ef4444" stroke-dasharray="4,2"/>
+    <!-- 12V zdroj +12V do UTP páru OR -->
+    <line x1="940" y1="105" x2="870" y2="105" stroke="#ef4444" stroke-width="2.5"/>
+    <path d="M 870 105 L 870 115 L 920 115" stroke="#f97316" stroke-width="2.5"/>
+    <text x="850" y="98" font-size="9" fill="#7f1d1d" font-weight="bold">+12V do UTP</text>
     
     <!-- GND -->
-    <line x1="920" y1="225" x2="900" y2="225" stroke="#22c55e"/>
-    <path d="M 900 225 L 860 225 L 860 385 L 940 385" stroke="#1e293b"/>
+    <line x1="1085" y1="105" x2="1085" y2="130" stroke="#1e293b" stroke-width="2.5"/>
+    <!-- GND ke shieldu - svorka mínus -->
+    <line x1="1085" y1="130" x2="1140" y2="130" stroke="#1e293b" stroke-width="2.5"/>
+    <line x1="1140" y1="130" x2="1140" y2="300" stroke="#1e293b" stroke-width="2.5"/>
+    <line x1="1140" y1="300" x2="992" y2="300" stroke="#1e293b" stroke-width="2.5"/>
+    <!-- GND do UTP páru GR -->
+    <line x1="1085" y1="130" x2="1085" y2="220" stroke="#1e293b" stroke-width="2.5"/>
+    <line x1="1085" y1="220" x2="920" y2="220" stroke="#22c55e" stroke-width="2.5"/>
+    <text x="1020" y="215" font-size="9" fill="#15803d" font-weight="bold">GND do UTP</text>
     
-    <!-- Signál ze senzoru do PC817 IN+ -->
-    <line x1="920" y1="170" x2="935" y2="200" stroke="#3b82f6"/>
+    <!-- Signál ze senzoru (12V) do PC817 IN+ -->
+    <line x1="920" y1="170" x2="935" y2="185" stroke="#3b82f6"/>
+    <line x1="920" y1="180" x2="935" y2="200" stroke="#bfdbfe"/>
     
-    <!-- Signál GND do PC817 IN- -->
-    <line x1="920" y1="180" x2="935" y2="212" stroke="#bfdbfe"/>
+    <!-- PC817 OUT do D2 (V1) -->
+    <path d="M 1105 185 L 1135 185 L 1135 408 L 940 408" stroke="#3b82f6" stroke-width="2"/>
     
-    <!-- PC817 OUT do D2 -->
-    <path d="M 1105 200 L 1140 200 L 1140 410 L 940 410" stroke="#3b82f6" stroke-width="2"/>
+    <!-- PC817 G (výstupní) do GND Wemos -->
+    <path d="M 1105 200 L 1125 200 L 1125 381 L 940 381" stroke="#1e293b" stroke-dasharray="4,2"/>
     
-    <!-- PC817 GND do GND Wemos -->
-    <path d="M 1105 212 L 1130 212 L 1130 385 L 940 385" stroke="#1e293b" stroke-dasharray="4,2"/>
+    <!-- TRIG z D5 do UTP páru BR -->
+    <line x1="940" y1="435" x2="900" y2="435" stroke="#a855f7" stroke-width="1.5"/>
+    <line x1="900" y1="435" x2="900" y2="285" stroke="#a855f7" stroke-width="1.5"/>
+    <line x1="900" y1="285" x2="920" y2="285" stroke="#a855f7" stroke-width="1.5"/>
+    
+    <!-- ECHO z UTP páru BR/BÍ do D6 (PŘÍMO bez děliče!) -->
+    <line x1="920" y1="295" x2="895" y2="295" stroke="#fbbf24" stroke-width="1.5"/>
+    <line x1="895" y1="295" x2="895" y2="460" stroke="#fbbf24" stroke-width="1.5"/>
+    <line x1="895" y1="460" x2="940" y2="460" stroke="#fbbf24" stroke-width="1.5"/>
+    
+    <!-- 5V z Wemos do UTP páru BR (napájí JSN-SR04T) -->
+    <!-- Pozor: napájení ultrazvuku jde mimo - z 5V pinu Wemos -->
   </g>
 
-  <!-- TRIG ultrazvuk -->
-  <line x1="280" y1="390" x2="920" y2="390" stroke="#a855f7" stroke-width="1.5"/>
-  <text x="500" y="383" font-size="10" fill="#7e22ce">TRIG (krátký impuls)</text>
+  <!-- Popisek -->
+  <g font-size="10" fill="#16a34a" font-weight="bold">
+    <text x="600" y="640" text-anchor="middle">★ Bez děliče napětí na ECHO — JSN-SR04T napájený z 5V dává 5V signál, který je v toleranci ESP8266</text>
+  </g>
   
-  <!-- Wemos D5 → TRIG -->
-  <line x1="940" y1="435" x2="935" y2="435" stroke="#a855f7"/>
-  <path d="M 935 435 L 905 435 L 905 390 L 920 390" stroke="#a855f7" fill="none" stroke-width="1.5"/>
-  
-  <!-- ECHO přes dělič -->
-  <line x1="280" y1="395" x2="780" y2="395" stroke="#06b6d4" stroke-width="1.5"/>
-  <path d="M 780 395 L 780 420 L 900 420 L 900 460 L 940 460" stroke="#06b6d4" fill="none" stroke-width="1.5"/>
-  <text x="500" y="408" font-size="10" fill="#0e7490">ECHO 5V → dělič → D6</text>
-
-  <!-- Stínění (pokud by bylo FTP) -->
-  <text x="600" y="660" text-anchor="middle" font-size="10" fill="#64748b" font-style="italic">
-    Pokud by byl UTP stíněný (FTP/SFTP), stínění připojit JEN na GND v rozvaděči (jednobodové uzemnění)
+  <text x="600" y="670" text-anchor="middle" font-size="11" fill="#1e293b" font-weight="bold">
+    Jediný napájecí zdroj 12V → vše ostatní z něj
   </text>
+
 </svg>
 
 <div class="note">
-  <strong>⚠️ Důležité:</strong> Tento diagram nezachycuje úplné mechanické rozložení. Slouží k pochopení elektrického propojení.
+  <strong>⚠️ Důležité:</strong> ECHO z JSN-SR04T je teď bezpečný pro ESP8266, protože napájíme sondu z 5V pinu Wemos (= výstup Power Shieldu). 
+  Pokud bys ji napájel přímo z 12V, signál ECHO by byl také 12V a zabil bys pin ESP. <strong>Vždy napájej JSN-SR04T 5V z Wemos!</strong>
 </div>
 
-<h2>2. Detail: Modul PC817 (zapojení signálu)</h2>
+<h2>2. Detail: Wemos + Power Shield (sendvič)</h2>
 
-<svg viewBox="0 0 900 350" xmlns="http://www.w3.org/2000/svg">
-  <!-- Modul PC817 -->
-  <rect x="320" y="100" width="280" height="180" fill="#fce7f3" stroke="#ec4899" stroke-width="2" rx="8"/>
-  <text x="460" y="125" text-anchor="middle" font-weight="bold" font-size="14">Modul PC817 (dvoukanálový)</text>
-  
-  <!-- LED část -->
-  <g transform="translate(380, 160)">
-    <text x="0" y="-5" font-size="11" font-weight="bold">LED strana (vstup)</text>
-    <line x1="0" y1="20" x2="0" y2="55" stroke="#ef4444" stroke-width="2"/>
-    <text x="-30" y="40" font-size="10" fill="#ef4444">IN+</text>
-    
-    <line x1="80" y1="20" x2="80" y2="55" stroke="#1e293b" stroke-width="2"/>
-    <text x="90" y="40" font-size="10">IN-</text>
-    
-    <!-- LED symbol -->
-    <polygon points="35,40 35,60 50,50" fill="#f97316"/>
-    <line x1="50" y1="35" x2="50" y2="65" stroke="#1e293b" stroke-width="2"/>
-    <line x1="55" y1="40" x2="60" y2="35" stroke="#f97316"/>
-    <line x1="55" y1="50" x2="60" y2="45" stroke="#f97316"/>
-    
-    <!-- Předřadný rezistor (osazený na modulu) -->
-    <rect x="-20" y="65" width="40" height="15" fill="#fbbf24" stroke="#1e293b"/>
-    <text x="0" y="92" text-anchor="middle" font-size="9">1k (osazený)</text>
-  </g>
-  
-  <!-- Fototranzistor -->
-  <g transform="translate(540, 160)">
-    <text x="0" y="-5" font-size="11" font-weight="bold">Tranzistor (výstup)</text>
-    <line x1="0" y1="20" x2="0" y2="55" stroke="#ef4444" stroke-width="2"/>
-    <text x="-25" y="40" font-size="10">VCC</text>
-    
-    <line x1="40" y1="20" x2="40" y2="55" stroke="#3b82f6" stroke-width="2"/>
-    <text x="50" y="40" font-size="10" fill="#3b82f6">OUT</text>
-    
-    <line x1="80" y1="20" x2="80" y2="55" stroke="#1e293b" stroke-width="2"/>
-    <text x="90" y="40" font-size="10">GND</text>
-    
-    <!-- Tranzistor symbol -->
-    <circle cx="20" cy="40" r="12" fill="none" stroke="#1e293b" stroke-width="1.5"/>
-    <line x1="15" y1="35" x2="15" y2="45" stroke="#1e293b" stroke-width="2"/>
-  </g>
-  
-  <!-- Izolační čára uprostřed -->
-  <line x1="460" y1="100" x2="460" y2="280" stroke="#ec4899" stroke-width="2" stroke-dasharray="6,4"/>
-  <text x="460" y="295" text-anchor="middle" font-size="10" fill="#ec4899" font-weight="bold">⚡ Galvanická izolace 5 kV ⚡</text>
+<svg viewBox="0 0 1000 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="boardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e40af"/>
+      <stop offset="100%" stop-color="#0f4c75"/>
+    </linearGradient>
+  </defs>
 
-  <!-- Vstupy zleva -->
-  <g font-size="11">
-    <line x1="100" y1="180" x2="380" y2="180" stroke="#3b82f6" stroke-width="2"/>
-    <text x="50" y="184" text-anchor="middle" font-size="11" fill="#3b82f6">BL signál</text>
-    <text x="240" y="172" text-anchor="middle" font-size="10" fill="#64748b">z 30 m UTP</text>
+  <!-- Power Shield (vespod) -->
+  <g transform="translate(150, 130)">
+    <rect x="0" y="0" width="280" height="180" fill="url(#boardGrad)" stroke="#0f172a" stroke-width="1" rx="6"/>
+    <text x="140" y="20" text-anchor="middle" fill="#fef3c7" font-size="13" font-weight="bold">DC Power Shield (7-24V)</text>
     
-    <line x1="100" y1="220" x2="460" y2="220" stroke="#bfdbfe" stroke-width="2"/>
-    <text x="50" y="224" text-anchor="middle" font-size="11" fill="#1e3a8a">BL/BÍ GND</text>
+    <!-- Svorkovnice -->
+    <rect x="20" y="40" width="80" height="30" fill="#16a34a" stroke="#14532d" stroke-width="1.5"/>
+    <circle cx="40" cy="55" r="5" fill="#cbd5e1" stroke="#475569"/>
+    <circle cx="80" cy="55" r="5" fill="#cbd5e1" stroke="#475569"/>
+    <text x="40" y="85" text-anchor="middle" fill="#fef3c7" font-size="10" font-weight="bold">+12V</text>
+    <text x="80" y="85" text-anchor="middle" fill="#fef3c7" font-size="10" font-weight="bold">GND</text>
+    
+    <!-- DC barrel jack (volitelný) -->
+    <rect x="130" y="40" width="50" height="30" fill="#0f172a" stroke="#94a3b8"/>
+    <circle cx="155" cy="55" r="8" fill="#475569"/>
+    <text x="155" y="85" text-anchor="middle" fill="#fef3c7" font-size="9">DC jack (alt.)</text>
+    
+    <!-- Step-down čip -->
+    <rect x="210" y="40" width="50" height="35" fill="#000" stroke="#94a3b8" rx="2"/>
+    <text x="235" y="62" text-anchor="middle" fill="#cbd5e1" font-size="9">MP2307</text>
+    
+    <!-- Tlumivka -->
+    <circle cx="160" cy="120" r="15" fill="#475569" stroke="#1e293b"/>
+    <text x="160" y="123" text-anchor="middle" fill="#fef3c7" font-size="8">4R7</text>
+    
+    <!-- Schottky dioda -->
+    <rect x="200" y="115" width="15" height="10" fill="#1e293b"/>
+    <text x="207" y="135" text-anchor="middle" fill="#fef3c7" font-size="7">SS24</text>
+    
+    <!-- Piny shieldu (jdou nahoru do Wemos) -->
+    <g font-size="8" fill="#fef3c7" font-family="monospace">
+      <circle cx="10" cy="100" r="3" fill="#fbbf24"/>
+      <circle cx="10" cy="115" r="3" fill="#fbbf24"/>
+      <circle cx="10" cy="130" r="3" fill="#fbbf24"/>
+      <circle cx="10" cy="145" r="3" fill="#fbbf24"/>
+      <circle cx="270" cy="100" r="3" fill="#fbbf24"/>
+      <circle cx="270" cy="115" r="3" fill="#fbbf24"/>
+      <circle cx="270" cy="130" r="3" fill="#fbbf24"/>
+      <circle cx="270" cy="145" r="3" fill="#fbbf24"/>
+    </g>
+    
+    <text x="140" y="170" text-anchor="middle" fill="#fef3c7" font-size="9" font-style="italic">
+      Konverze 12V → 5V (na pin 5V Wemos)
+    </text>
   </g>
 
-  <!-- Výstupy doprava -->
-  <g font-size="11">
-    <line x1="540" y1="180" x2="540" y2="160" stroke="#ef4444" stroke-width="2"/>
-    <line x1="540" y1="160" x2="700" y2="160" stroke="#ef4444" stroke-width="2"/>
-    <text x="750" y="165" font-size="11" fill="#ef4444">→ 3.3V Wemos</text>
+  <!-- Wemos D1 Mini (na shieldu - sendvič) -->
+  <g transform="translate(170, 50)" opacity="0.85">
+    <rect x="0" y="0" width="240" height="70" fill="#0f4c75" stroke="#1e293b" stroke-width="1" rx="5"/>
+    <text x="120" y="20" text-anchor="middle" fill="#fef3c7" font-size="11" font-weight="bold">Wemos D1 Mini</text>
     
-    <line x1="580" y1="180" x2="580" y2="140" stroke="#3b82f6" stroke-width="2"/>
-    <line x1="580" y1="140" x2="700" y2="140" stroke="#3b82f6" stroke-width="2"/>
-    <text x="750" y="145" font-size="11" fill="#3b82f6">→ D2 (GPIO4)</text>
+    <!-- ESP8266 chip -->
+    <rect x="85" y="30" width="70" height="30" fill="#1e293b" stroke="#94a3b8"/>
+    <text x="120" y="49" text-anchor="middle" fill="#94a3b8" font-size="8">ESP-12</text>
     
-    <!-- Pull-up rezistor -->
-    <rect x="600" y="155" width="15" height="40" fill="#fbbf24" stroke="#1e293b"/>
-    <text x="608" y="180" text-anchor="middle" font-size="8">10k</text>
-    <text x="630" y="175" font-size="9" fill="#64748b">interní pull-up</text>
-    <text x="630" y="186" font-size="9" fill="#64748b">v ESP stačí</text>
+    <!-- USB konektor -->
+    <rect x="95" y="0" width="50" height="14" fill="#cbd5e1"/>
+    <text x="120" y="10" text-anchor="middle" fill="#1e293b" font-size="7">μUSB (jen pro debugging)</text>
     
-    <line x1="620" y1="220" x2="620" y2="240" stroke="#1e293b" stroke-width="2"/>
-    <line x1="620" y1="240" x2="700" y2="240" stroke="#1e293b" stroke-width="2"/>
-    <text x="750" y="245" font-size="11">→ GND Wemos</text>
+    <!-- Piny (samec dolů do shieldu) -->
+    <g font-size="7" fill="#fef3c7" font-family="monospace">
+      <line x1="10" y1="55" x2="10" y2="75" stroke="#fbbf24" stroke-width="2"/>
+      <line x1="25" y1="55" x2="25" y2="75" stroke="#fbbf24" stroke-width="2"/>
+      <line x1="40" y1="55" x2="40" y2="75" stroke="#fbbf24" stroke-width="2"/>
+      <line x1="200" y1="55" x2="200" y2="75" stroke="#fbbf24" stroke-width="2"/>
+      <line x1="215" y1="55" x2="215" y2="75" stroke="#fbbf24" stroke-width="2"/>
+      <line x1="230" y1="55" x2="230" y2="75" stroke="#fbbf24" stroke-width="2"/>
+    </g>
   </g>
 
-  <text x="450" y="30" text-anchor="middle" font-size="13" font-weight="bold" fill="#0369a1">
-    Optočlen INVERTUJE signál
+  <!-- Šipka spojení -->
+  <text x="500" y="200" font-size="11" fill="#16a34a" font-weight="bold">
+    Wemos se zasune piny dolů do shieldu (sendvič)
   </text>
-  <text x="450" y="55" text-anchor="middle" font-size="11" fill="#64748b">
-    Senzor HIGH → LED svítí → tranzistor sepne → D2 = LOW
-  </text>
-  <text x="450" y="73" text-anchor="middle" font-size="11" fill="#64748b">
-    Proto je v kódu trigger <tspan font-family="monospace" fill="#ef4444">FALLING</tspan> + <tspan font-family="monospace" fill="#ef4444">INPUT_PULLUP</tspan>
-  </text>
+  <line x1="430" y1="160" x2="490" y2="200" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+  <!-- Vstup 12V -->
+  <g transform="translate(600, 130)">
+    <rect x="0" y="0" width="180" height="60" fill="#fef9c3" stroke="#854d0e" stroke-width="2" rx="6"/>
+    <text x="90" y="22" text-anchor="middle" fill="#854d0e" font-size="12" font-weight="bold">12V síťový zdroj</text>
+    <text x="90" y="40" text-anchor="middle" fill="#1e293b" font-size="10">1A spínaný adaptér</text>
+    <text x="90" y="54" text-anchor="middle" fill="#1e293b" font-size="9">např. 5.5/2.1mm DC jack</text>
+  </g>
+  <line x1="600" y1="155" x2="500" y2="170" stroke="#dc2626" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="555" y="155" font-size="10" fill="#dc2626" font-weight="bold">+12V</text>
+
+  <!-- Co dělá -->
+  <g transform="translate(50, 350)">
+    <text x="0" y="0" font-size="11" font-weight="bold" fill="#16a34a">✅ Co Power Shield dělá:</text>
+    <text x="0" y="18" font-size="10">• Konvertuje 7-24V vstup → 5V na pinu 5V Wemos (integrovaný step-down MP2307)</text>
+    <text x="0" y="32" font-size="10">• Pinout 1:1 s Wemos — všechny piny D0-D8, A0, RST, 5V, 3V3, GND zůstávají dostupné</text>
+    <text x="0" y="46" font-size="10">• Schottky dioda chrání před opačnou polaritou</text>
+    <text x="0" y="60" font-size="10">• Wemos pak pin 5V dává 5V (= výstup shieldu) — z toho napájíme JSN-SR04T</text>
+  </g>
 </svg>
 
-<h2>3. Detail: Dělič napětí pro ECHO pin</h2>
+<h2>3. Detail: JSN-SR04T bez děliče napětí</h2>
 
-<svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg">
-  <!-- JSN-SR04T strana -->
-  <rect x="50" y="80" width="150" height="80" fill="#dbeafe" stroke="#3b82f6" stroke-width="2" rx="6"/>
-  <text x="125" y="105" text-anchor="middle" font-weight="bold" font-size="13">JSN-SR04T</text>
-  <text x="125" y="123" text-anchor="middle" font-size="11" fill="#64748b">ECHO výstup</text>
-  <text x="125" y="140" text-anchor="middle" font-size="11" fill="#ef4444">5 V signál</text>
-  
-  <!-- Dráty -->
-  <line x1="200" y1="150" x2="320" y2="150" stroke="#06b6d4" stroke-width="2"/>
-  
-  <!-- R1 rezistor -->
-  <rect x="320" y="135" width="60" height="30" fill="#fbbf24" stroke="#1e293b" stroke-width="2"/>
-  <text x="350" y="155" text-anchor="middle" font-size="11" font-weight="bold">R1</text>
-  <text x="350" y="180" text-anchor="middle" font-size="11">10 kΩ</text>
-  
-  <!-- Spojovací bod -->
-  <line x1="380" y1="150" x2="450" y2="150" stroke="#06b6d4" stroke-width="2"/>
-  <circle cx="450" cy="150" r="4" fill="#1e293b"/>
-  
-  <!-- Větev k Wemos -->
-  <line x1="450" y1="150" x2="550" y2="150" stroke="#06b6d4" stroke-width="2"/>
-  <text x="500" y="143" text-anchor="middle" font-size="10" fill="#0e7490">3.33 V (bezpečné)</text>
-  
-  <!-- R2 rezistor (k GND) -->
-  <line x1="450" y1="150" x2="450" y2="185" stroke="#06b6d4" stroke-width="2"/>
-  <rect x="435" y="185" width="30" height="60" fill="#fbbf24" stroke="#1e293b" stroke-width="2"/>
-  <text x="478" y="220" font-size="11" font-weight="bold">R2</text>
-  <text x="478" y="235" font-size="11">20 kΩ</text>
-  <line x1="450" y1="245" x2="450" y2="260" stroke="#1e293b" stroke-width="2"/>
-  
-  <!-- GND -->
-  <line x1="430" y1="260" x2="470" y2="260" stroke="#1e293b" stroke-width="3"/>
-  <line x1="435" y1="265" x2="465" y2="265" stroke="#1e293b" stroke-width="2"/>
-  <line x1="440" y1="270" x2="460" y2="270" stroke="#1e293b" stroke-width="2"/>
-  <text x="450" y="285" text-anchor="middle" font-size="11">GND</text>
+<svg viewBox="0 0 800 280" xmlns="http://www.w3.org/2000/svg">
+  <text x="400" y="25" text-anchor="middle" font-size="14" font-weight="bold" fill="#0369a1">
+    JSN-SR04T napájený z 5V pinu Wemos
+  </text>
   
   <!-- Wemos -->
-  <rect x="550" y="120" width="120" height="60" fill="#dcfce7" stroke="#16a34a" stroke-width="2" rx="6"/>
-  <text x="610" y="145" text-anchor="middle" font-weight="bold" font-size="12">Wemos</text>
-  <text x="610" y="165" text-anchor="middle" font-size="11">D6 (GPIO12)</text>
+  <rect x="500" y="80" width="200" height="160" fill="#dcfce7" stroke="#16a34a" stroke-width="2" rx="6"/>
+  <text x="600" y="105" text-anchor="middle" font-weight="bold" font-size="13">Wemos D1 Mini</text>
+  <text x="600" y="123" text-anchor="middle" font-size="11" fill="#16a34a">(s Power Shieldem)</text>
   
-  <text x="350" y="40" text-anchor="middle" font-size="14" font-weight="bold" fill="#0369a1">
-    Výpočet: Vout = 5V × R2 / (R1+R2) = 5 × 20/30 = <tspan fill="#16a34a">3.33 V ✓</tspan>
-  </text>
-  <text x="350" y="60" text-anchor="middle" font-size="11" fill="#64748b">
-    TRIG pin se nečte ze strany ESP, jen vysílá → bez děliče
-  </text>
-</svg>
-
-<h2>4. Souhrnná tabulka pinů Wemos D1 Mini</h2>
-
-<table>
-<tr><th>Pin Wemos</th><th>GPIO</th><th>Funkce</th><th>Připojeno na</th><th>Pozn.</th></tr>
-<tr><td><strong>5V</strong></td><td>—</td><td>Napájení 5V</td><td>VCC PC817 modul, VCC JSN-SR04T</td><td>z USB</td></tr>
-<tr><td><strong>3V3</strong></td><td>—</td><td>Napájení 3.3V</td><td>VCC LED strana PC817 (pokud má modul propojku)</td><td>volitelné</td></tr>
-<tr><td><strong>GND</strong></td><td>—</td><td>Společná zem</td><td>GND všeho</td><td>min. 2 piny</td></tr>
-<tr><td><strong>D2</strong></td><td>GPIO4</td><td>Vstup průtokoměru</td><td>OUT z modulu PC817</td><td>FALLING, interní pull-up</td></tr>
-<tr><td><strong>D5</strong></td><td>GPIO14</td><td>TRIG ultrazvuku</td><td>TRIG JSN-SR04T (přímo)</td><td>jen výstup, 3.3V stačí</td></tr>
-<tr><td><strong>D6</strong></td><td>GPIO12</td><td>ECHO ultrazvuku</td><td>ECHO přes dělič 10k+20k</td><td>5V→3.3V dělič povinně!</td></tr>
-</table>
-
-<h2>5. Pájecí body u senzoru (zalévat smršťovačkou)</h2>
-
-<svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg">
-  <!-- Senzor -->
-  <rect x="30" y="60" width="120" height="80" fill="#dbeafe" stroke="#3b82f6" stroke-width="2" rx="6"/>
-  <text x="90" y="85" text-anchor="middle" font-weight="bold" font-size="12">DN32 senzor</text>
-  <text x="90" y="105" text-anchor="middle" font-size="10">JST SM 3P</text>
-  
-  <!-- Vodiče senzoru -->
-  <circle cx="160" cy="70" r="3" fill="#ef4444"/><text x="170" y="75" font-size="10">červená VCC</text>
-  <circle cx="160" cy="100" r="3" fill="#fbbf24"/><text x="170" y="105" font-size="10">žlutá OUT</text>
-  <circle cx="160" cy="130" r="3" fill="#1e293b"/><text x="170" y="135" font-size="10">černá GND</text>
-  
-  <!-- Pájecí body -->
-  <g>
-    <!-- VCC - kondenzátor 100nF -->
-    <line x1="280" y1="72" x2="350" y2="72" stroke="#ef4444" stroke-width="2"/>
-    <line x1="350" y1="72" x2="350" y2="130" stroke="#ef4444" stroke-width="2"/>
-    <rect x="340" y="80" width="20" height="14" fill="#fbbf24" stroke="#1e293b"/>
-    <text x="365" y="92" font-size="9">100nF</text>
-    
-    <!-- VCC pokračuje do UTP -->
-    <line x1="280" y1="72" x2="500" y2="72" stroke="#f97316" stroke-width="3"/>
-    <text x="430" y="65" font-size="10" fill="#c2410c">→ pár OR (oba)</text>
-
-    <!-- OUT - sériový 1kΩ -->
-    <line x1="280" y1="102" x2="320" y2="102" stroke="#fbbf24" stroke-width="2"/>
-    <rect x="320" y="95" width="40" height="14" fill="#fbbf24" stroke="#1e293b"/>
-    <text x="340" y="106" text-anchor="middle" font-size="9" font-weight="bold">1kΩ</text>
-    <line x1="360" y1="102" x2="500" y2="102" stroke="#3b82f6" stroke-width="3"/>
-    <text x="430" y="95" font-size="10" fill="#1e3a8a">→ BL signál</text>
-    
-    <!-- GND -->
-    <line x1="280" y1="132" x2="500" y2="132" stroke="#22c55e" stroke-width="3"/>
-    <text x="430" y="125" font-size="10" fill="#15803d">→ pár GR (oba)</text>
-    
-    <!-- GND ze signal páru spojen s GND -->
-    <line x1="500" y1="115" x2="430" y2="115" stroke="#bfdbfe" stroke-width="2"/>
-    <text x="540" y="120" font-size="10" fill="#1e3a8a">← BL/BÍ (zem signálu)</text>
-    <line x1="430" y1="115" x2="430" y2="132" stroke="#bfdbfe" stroke-width="2"/>
-    <circle cx="430" cy="132" r="3" fill="#1e293b"/>
+  <g font-size="11">
+    <circle cx="520" cy="150" r="4" fill="#ef4444"/><text x="535" y="154">5V (= výstup shieldu)</text>
+    <circle cx="520" cy="175" r="4" fill="#1e293b"/><text x="535" y="179">GND</text>
+    <circle cx="520" cy="200" r="4" fill="#a855f7"/><text x="535" y="204">D5 (TRIG)</text>
+    <circle cx="520" cy="225" r="4" fill="#06b6d4"/><text x="535" y="229">D6 (ECHO)</text>
   </g>
   
-  <!-- UTP konec -->
-  <rect x="500" y="55" width="80" height="100" fill="#f1f5f9" stroke="#64748b" stroke-width="2" stroke-dasharray="4,2" rx="4"/>
-  <text x="540" y="80" text-anchor="middle" font-size="11">UTP Cat-6</text>
-  <text x="540" y="95" text-anchor="middle" font-size="9" fill="#64748b">30 m do</text>
-  <text x="540" y="108" text-anchor="middle" font-size="9" fill="#64748b">rozvaděče</text>
+  <!-- JSN-SR04T -->
+  <rect x="100" y="80" width="200" height="160" fill="#dbeafe" stroke="#3b82f6" stroke-width="2" rx="6"/>
+  <text x="200" y="105" text-anchor="middle" font-weight="bold" font-size="13">JSN-SR04T modul</text>
+  <text x="200" y="123" text-anchor="middle" font-size="11" fill="#3b82f6">napájen 5V</text>
   
-  <text x="350" y="180" text-anchor="middle" font-size="11" fill="#64748b" font-style="italic">
-    Celé pájené spoje zalít smršťovací bužírkou nebo termoplastovou hmotou - vlhko v poklopu nádrže!
+  <g font-size="11">
+    <circle cx="280" cy="150" r="4" fill="#ef4444"/><text x="270" y="154" text-anchor="end">VCC 5V</text>
+    <circle cx="280" cy="175" r="4" fill="#1e293b"/><text x="270" y="179" text-anchor="end">GND</text>
+    <circle cx="280" cy="200" r="4" fill="#a855f7"/><text x="270" y="204" text-anchor="end">TRIG</text>
+    <circle cx="280" cy="225" r="4" fill="#06b6d4"/><text x="270" y="229" text-anchor="end">ECHO (5V max)</text>
+  </g>
+  
+  <!-- Propojky -->
+  <line x1="280" y1="150" x2="520" y2="150" stroke="#ef4444" stroke-width="2"/>
+  <line x1="280" y1="175" x2="520" y2="175" stroke="#1e293b" stroke-width="2"/>
+  <line x1="280" y1="200" x2="520" y2="200" stroke="#a855f7" stroke-width="2"/>
+  <line x1="280" y1="225" x2="520" y2="225" stroke="#06b6d4" stroke-width="2"/>
+  
+  <text x="400" y="260" text-anchor="middle" font-size="11" fill="#16a34a" font-weight="bold">
+    ✅ Bez děliče napětí — signál ECHO je max 5V, v toleranci ESP8266
   </text>
 </svg>
 
-<h2>6. Doporučené umístění komponent</h2>
+<div class="note-info">
+  <strong>💡 Technická poznámka k ECHO:</strong>
+  <br><br>
+  ESP8266 GPIO piny jsou specifikované na 3.3V logic, ale jsou <strong>5V-tolerantní</strong> u většiny pinů (i když to Espressif oficiálně nezaručuje).
+  V praxi se 5V signály na vstupních pinech používají běžně bez problémů.
+  <br><br>
+  Pokud chceš být maximálně opatrný, můžeš ECHO stále provést přes dělič (10k+20k jako dříve), ale není to nutné.
+  Pro tvůj projekt s 30m kabelem a galvanicky odděleným průtokoměrem jsi v pohodě i bez něj.
+</div>
+
+<h2>4. Souhrnná tabulka pinů</h2>
 
 <table>
-<tr><th>Komponenta</th><th>Kde umístit</th></tr>
-<tr><td>Wemos D1 Mini</td><td>Vnitřní rozvaděč v suchu, blízko WiFi signálu</td></tr>
-<tr><td>Modul PC817</td><td>Vedle Wemos (krátké propojky, max 10 cm)</td></tr>
-<tr><td>Dělič ECHO (R1, R2)</td><td>Na nepájivém poli/perfboardu vedle Wemos</td></tr>
-<tr><td>Modul JSN-SR04T (elektronika)</td><td>V suché krabičce IP54 pod poklopem nádrže</td></tr>
-<tr><td>Sonda JSN-SR04T</td><td>Zavěšená na PVC trubce uprostřed nádrže</td></tr>
-<tr><td>Kondenzátor 100nF + 1kΩ u senzoru</td><td>Zalité smršťovačkou přímo na vodiče senzoru</td></tr>
-<tr><td>Kondenzátor 100nF X2</td><td>V rozvaděči na svorkách čerpadla (mezi L-N)</td></tr>
-<tr><td>Ferritové jádro</td><td>Na CYKY kabel u čerpadla (klipové, ~3 cm)</td></tr>
+<tr><th>Pin Wemos</th><th>Funkce</th><th>Připojeno na</th><th>Pozn.</th></tr>
+<tr><td><strong>Svorka +</strong> (na shieldu)</td><td>Vstup 7-24V</td><td>+12V z síťového zdroje</td><td>Napájí celou desku</td></tr>
+<tr><td><strong>Svorka −</strong> (na shieldu)</td><td>GND</td><td>GND síťového zdroje + UTP pár GR</td><td>Společné GND</td></tr>
+<tr><td><strong>5V</strong> (na Wemos)</td><td>Výstup 5V z step-downu</td><td>VCC modulu JSN-SR04T</td><td>Napájí ultrazvuk</td></tr>
+<tr><td><strong>3V3</strong></td><td>Výstup 3.3V z AMS1117</td><td>—</td><td>NEPOUŽÍVAT pro napájení!</td></tr>
+<tr><td><strong>GND</strong></td><td>Společná zem</td><td>GND PC817, JSN-SR04T, UTP</td><td>min. 2 piny společně</td></tr>
+<tr><td><strong>D2</strong> (GPIO4)</td><td>Vstup pulzů z průtokoměru</td><td>V1 modulu PC817</td><td>FALLING, INPUT_PULLUP</td></tr>
+<tr><td><strong>D5</strong> (GPIO14)</td><td>TRIG ultrazvuku</td><td>TRIG JSN-SR04T přes UTP pár BR</td><td>3.3V signál, postačí</td></tr>
+<tr><td><strong>D6</strong> (GPIO12)</td><td>ECHO ultrazvuku</td><td>ECHO JSN-SR04T přes UTP pár BR/BÍ</td><td>5V přímo, bez děliče</td></tr>
 </table>
 
-<div class="note">
-  <strong>💡 Tip pro montáž:</strong> Nejdřív otestuj všechno na stole bez prodlužování kabelů (UTP 1 m místo 30 m). 
-  Až ověříš, že Wemos správně počítá pulzy a měří hladinu, teprve pak prodluž a instaluj.
-</div>
+<h2>5. Aktualizovaný seznam dílů</h2>
+
+<table>
+<tr><th>Položka</th><th>Účel</th><th>Cena</th><th>Status</th></tr>
+<tr><td>Wemos D1 Mini</td><td>Mikrokontroler</td><td>~80 Kč</td><td>✅ máš</td></tr>
+<tr><td>DC Power Shield (7-24V)</td><td>Napájení Wemos z 12V</td><td>~50 Kč</td><td>✅ máš</td></tr>
+<tr><td>12V/1A síťový zdroj</td><td>Hlavní napájení systému</td><td>~100-150 Kč</td><td>📦 koupit</td></tr>
+<tr><td>Modul PC817 (2-kanálový)</td><td>Galvanická izolace signálu</td><td>~50 Kč</td><td>✅ máš</td></tr>
+<tr><td>Senzor DN32</td><td>Měření průtoku</td><td>~250 Kč</td><td>✅ máš</td></tr>
+<tr><td>JSN-SR04T</td><td>Měření hladiny</td><td>~150 Kč</td><td>📦 koupit</td></tr>
+<tr><td>Krabička IP65 + silica gel</td><td>Pro JSN-SR04T modul</td><td>~150 Kč</td><td>📦 koupit</td></tr>
+<tr><td>PG7 průchodka</td><td>Kabel do krabičky</td><td>~20 Kč</td><td>📦 koupit</td></tr>
+<tr><td>Rezistor 1 kΩ + kond. 100 nF (u senzoru)</td><td>Ochrana výstupu</td><td>~5 Kč</td><td>📦 koupit</td></tr>
+<tr><td>Kondenzátor X2 100nF 275V AC</td><td>Odrušení čerpadla</td><td>~30 Kč</td><td>📦 koupit</td></tr>
+<tr><td>Ferritové jádro klipové</td><td>Na CYKY u čerpadla</td><td>~40 Kč</td><td>📦 koupit (volitelné)</td></tr>
+<tr><td>UTP Cat-6 30 m</td><td>Vedení k senzoru</td><td>—</td><td>✅ máš</td></tr>
+<tr><td>~~LM2596 step-down pro Wemos~~</td><td>~~Konverze 12V→5V pro Wemos~~</td><td>—</td><td>❌ NENÍ POTŘEBA (Power Shield to dělá)</td></tr>
+<tr><td><strong>LM2596 step-down pro JSN-SR04T</strong></td><td>Konverze 12V→5V v krabičce u sondy</td><td>~50 Kč nebo už máš</td><td>✅ POTŘEBA</td></tr>
+<tr><td>~~Rezistory 10k + 20k~~ pro dělič ECHO</td><td>~~5V → 3.3V~~</td><td>—</td><td>❌ NEPOTŘEBUJEŠ</td></tr>
+</table>
+
+<p><strong>Celkem k dokoupení:</strong> ~500 Kč (zdroj, JSN-SR04T, krabička, drobnosti)</p>
 
 </body>
 </html>
