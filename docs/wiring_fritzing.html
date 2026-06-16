@@ -26,7 +26,7 @@
   <strong>🆕 Klíčové zjednodušení:</strong>
   <ul>
     <li><strong>Wemos + Power Shield</strong> = jeden sendvičový modul, vstup 7-24V přes svorky</li>
-    <li><strong>Žádný externí LM2596</strong> step-down — integrovaný v Power Shieldu</li>
+    <li><strong>Žádný externí step-down pro Wemos</strong> — integrovaný v Power Shieldu (LM2596 se použije pouze v krabičce u ultrazvuku)</li>
     <li><strong>Žádný dělič napětí</strong> pro ECHO — JSN-SR04T napájen 5V z Wemos</li>
     <li><strong>Jediný 12V zdroj</strong> napájí celou instalaci</li>
   </ul>
@@ -289,7 +289,7 @@
       
       <text x="15" y="215" fill="#16a34a">✓ Bez děliče na ECHO (5V signál OK)</text>
       <text x="15" y="232" fill="#16a34a">✓ Senzor DN32 napájen 12V → vyšší proud LED</text>
-      <text x="15" y="249" fill="#16a34a">✓ Žádný externí step-down (Power Shield)</text>
+      <text x="15" y="249" fill="#16a34a">✓ Žádný externí step-down pro Wemos (Power Shield)</text>
       <text x="15" y="266" fill="#16a34a">✓ Jeden napájecí zdroj 12V/1A</text>
     </g>
   </g>
@@ -581,7 +581,7 @@
   <ol>
     <li><strong>Použít druhou polovinu páru OR</strong> jen pro 5V (paralelně z Wemos 5V pinu) — ale tím ztratíš výhodu paralelního zapojení pro 12V → vyšší úbytek</li>
     <li><strong>Vést samostatný 2-vodičový kabel</strong> z rozvaděče k ultrazvukové krabičce jen pro 5V napájení (např. tenký telefonní kabel)</li>
-    <li><strong>Použít samostatný malý step-down v ultrazvukové krabičce</strong>, který vyrobí 5V z 12V (pár OR pak napájí jak senzor DN32, tak step-down)</li>
+    <li><strong>Použít LM2596 step-down v ultrazvukové krabičce</strong>, který vyrobí 5V z 12V (pár OR pak napájí jak senzor DN32, tak LM2596 v krabičce). Tento přístup je <strong>doporučený</strong> - LM2596 je běžně dostupný a často ho máte z předchozích projektů.</li>
   </ol>
   <strong>Doporučuju variantu 3</strong> — máš jen jeden kabel UTP do nádrže a v krabičce u ultrazvuku si uděláš lokální 12V→5V (např. malý LM2596 mini modul ~30 Kč, nebo MP1584).
 </div>
@@ -595,7 +595,7 @@
 <tr><td>Modul PC817 (2-kanálový)</td><td>—</td><td>✅ máš</td></tr>
 <tr><td>Senzor DN32 + JSN-SR04T</td><td>—</td><td>✅/📦</td></tr>
 <tr><td>Krabička IP65 + PG7 průchodka + silica gel</td><td>~170 Kč</td><td>📦 koupit</td></tr>
-<tr><td>Mini step-down 12V→5V (pro JSN-SR04T)</td><td>~30 Kč</td><td>📦 koupit</td></tr>
+<tr><td>LM2596 step-down 12V→5V (pro JSN-SR04T v krabičce)</td><td>~50 Kč</td><td>✅ pravděpodobně máš</td></tr>
 <tr><td>Rezistor 1 kΩ + kond. 100 nF (u senzoru)</td><td>~5 Kč</td><td>📦</td></tr>
 <tr><td>Kondenzátor X2 100nF 275V AC</td><td>~30 Kč</td><td>📦 (odrušení)</td></tr>
 <tr><td>UTP Cat-6 30 m</td><td>—</td><td>✅ máš</td></tr>
