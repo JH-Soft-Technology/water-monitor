@@ -67,13 +67,13 @@ water-monitor/
 | Průtokoměr DN32 | Pulzní, 1–120 l/min, `F = 4.5 × Q` (napájen 12 V) | ~250 Kč |
 | JSN-SR04T | Ultrazvukový senzor vzdálenosti, sonda IP67 | ~150 Kč |
 | Optočlen PC817 (modul) | Galvanické oddělení signálu | ~50 Kč |
-| Mini step-down 12 V → 5 V | Lokální napájení JSN-SR04T v krabičce | ~30 Kč |
+| LM2596 step-down (12 V → 5 V) | Lokální napájení JSN-SR04T v krabičce (klasický modul s displejem) | ~50 Kč |
 | Rezistor 1 kΩ | Sériový na výstup průtokoměru | ~1 Kč |
 | Kondenzátor 100 nF | Stabilizace napájení u senzoru | ~2 Kč |
 | Kondenzátor 100 nF X2 (275 V AC) | Odrušení čerpadla | ~30 Kč |
 | Ferritové jádro | Na silový kabel čerpadla | ~40 Kč |
 
-> 💡 **Architektura v2.1 (prosinec 2025):** Jediný 12 V zdroj napájí všechno. Wemos je napájen přes DC Power Shield (vstup 7-24 V), senzor DN32 jede přímo na 12 V (optimální proud LED v PC817) a JSN-SR04T má lokální 5 V napájení přes mini step-down v krabičce. Oproti v2.0 odpadá LM2596 step-down, dělič napětí 10k+20k pro ECHO a duální napájení (USB + ?).
+> 💡 **Architektura v2.1 (prosinec 2025):** Jediný 12 V zdroj napájí všechno. Wemos je napájen přes DC Power Shield (vstup 7-24 V), senzor DN32 jede přímo na 12 V (optimální proud LED v PC817) a JSN-SR04T má lokální 5 V napájení přes LM2596 step-down modul v krabičce. Oproti v2.0 odpadá externí step-down pro Wemos, dělič napětí 10k+20k pro ECHO a duální napájení (USB + ?).
 
 ### Zapojení pinů (Wemos D1 Mini)
 
