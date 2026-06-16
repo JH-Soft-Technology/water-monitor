@@ -14,11 +14,11 @@ projekt používá [sémantické verzování](https://semver.org/lang/cs/).
 - JSN-SR04T napájen 5V z výstupu Power Shieldu
 
 ### Odebráno
-- Externí step-down LM2596 (Power Shield to dělá integrovaně)
+- Externí step-down pro Wemos (Power Shield to dělá integrovaně)
 - Dělič napětí 10k+20k pro ECHO pin (signál ECHO z JSN-SR04T napájeného 5V je max 5V → bezpečné pro ESP8266 GPIO)
 
 ### Přidáno
-- Mini step-down 12V→5V v krabičce u ultrazvuku (lokální napájení JSN-SR04T)
+- LM2596 step-down 12V→5V v krabičce u ultrazvuku (lokální napájení JSN-SR04T)
 - Aktualizované wiring diagramy (`docs/wiring_diagram.html`, `docs/wiring_fritzing.html`)
 - Aktualizovaná tabulka komponent v README a komentáře v firmware
 
