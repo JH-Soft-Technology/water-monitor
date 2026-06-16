@@ -1,6 +1,6 @@
 /*
  * ============================================================================
- * Water Monitor v2.0 - Wemos D1 Mini
+ * Water Monitor v2.1 - Wemos D1 Mini
  * ============================================================================
  * 
  * Kompletní řešení monitoringu vody:
@@ -11,16 +11,21 @@
  *  - Duální režim: STA (běžný provoz) + AP (vždy dostupný setup)
  *  - LittleFS perzistentní úložiště konfigurace
  * 
- * Hardware:
- *  - Wemos D1 Mini (ESP8266)
- *  - Průtokoměr DN32 (charakteristika F = 4.5 * Q)
- *  - Optočlen PC817 (galvanické oddělení 30m UTP)
- *  - JSN-SR04T ultrazvukový senzor IP67
+ * Hardware (v2.1 - 12V architektura):
+ *  - Wemos D1 Mini (ESP8266) + DC Power Shield (7-24V vstup)
+ *  - 12V/1A spínaný zdroj jako jediný napájecí zdroj systému
+ *  - Průtokoměr DN32 napájený 12V (charakteristika F = 4.5 * Q)
+ *  - Optočlen PC817 (galvanické oddělení signálu na 30m UTP)
+ *  - JSN-SR04T ultrazvukový senzor IP67 (napájen 5V lokálně přes mini step-down)
  * 
  * Piny:
- *  - D2 (GPIO4)  - vstup z optočlenu (signál průtokoměru)
+ *  - D2 (GPIO4)  - vstup z optočlenu (signál průtokoměru, FALLING)
  *  - D5 (GPIO14) - TRIG ultrazvuku
- *  - D6 (GPIO12) - ECHO ultrazvuku (přes dělič 5V→3.3V)
+ *  - D6 (GPIO12) - ECHO ultrazvuku (PŘÍMO bez děliče - signál je 5V)
+ *  - Svorka +/- shieldu - 12V napájecí vstup
+ * 
+ * Pozn.: Firmware je v2.1 (= 2.0) - kód se nezměnil, jen hardwarová architektura
+ * a komentáře. Hodnoty pinů, logika, MQTT topics, kalibrace - vše stejné.
  * 
  * První spuštění:
  *  1. Nahrát firmware + filesystem (Tools → ESP8266 LittleFS Data Upload)

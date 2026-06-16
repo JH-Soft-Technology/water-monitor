@@ -62,26 +62,32 @@ water-monitor/
 | Komponenta | Popis | Orientační cena |
 |---|---|---|
 | Wemos D1 Mini | ESP8266 vývojová deska | ~80 Kč |
-| Průtokoměr DN32 | Pulzní, 1–120 l/min, `F = 4.5 × Q` | ~250 Kč |
+| **DC Power Shield** (7-24 V) | Sendvičový shield s integrovaným step-downem pro Wemos | ~50 Kč |
+| **12 V / 1 A spínaný zdroj** | Jediný napájecí zdroj pro celý systém | ~120 Kč |
+| Průtokoměr DN32 | Pulzní, 1–120 l/min, `F = 4.5 × Q` (napájen 12 V) | ~250 Kč |
 | JSN-SR04T | Ultrazvukový senzor vzdálenosti, sonda IP67 | ~150 Kč |
 | Optočlen PC817 (modul) | Galvanické oddělení signálu | ~50 Kč |
-| Rezistory 10 kΩ + 20 kΩ | Dělič napětí pro ECHO pin (5 V → 3,3 V) | ~10 Kč |
+| LM2596 step-down (12 V → 5 V) | Lokální napájení JSN-SR04T v krabičce (klasický modul s displejem) | ~50 Kč |
 | Rezistor 1 kΩ | Sériový na výstup průtokoměru | ~1 Kč |
 | Kondenzátor 100 nF | Stabilizace napájení u senzoru | ~2 Kč |
 | Kondenzátor 100 nF X2 (275 V AC) | Odrušení čerpadla | ~30 Kč |
 | Ferritové jádro | Na silový kabel čerpadla | ~40 Kč |
 
+> 💡 **Architektura v2.1 (prosinec 2025):** Jediný 12 V zdroj napájí všechno. Wemos je napájen přes DC Power Shield (vstup 7-24 V), senzor DN32 jede přímo na 12 V (optimální proud LED v PC817) a JSN-SR04T má lokální 5 V napájení přes LM2596 step-down modul v krabičce. Oproti v2.0 odpadá externí step-down pro Wemos, dělič napětí 10k+20k pro ECHO a duální napájení (USB + ?).
+
 ### Zapojení pinů (Wemos D1 Mini)
 
 | Pin | GPIO | Funkce | Připojení |
 |---|---|---|---|
-| `D2` | GPIO4 | Vstup průtokoměru | OUT optočlenu PC817 |
-| `D5` | GPIO14 | TRIG ultrazvuku | TRIG JSN-SR04T (přímo) |
-| `D6` | GPIO12 | ECHO ultrazvuku | ECHO přes dělič 10k+20k |
-| `5V` | — | Napájení 5 V | VCC senzorů |
-| `GND` | — | Společná zem | GND všeho |
+| `+` svorka shieldu | — | 12 V vstup | Hlavní 12 V zdroj |
+| `−` svorka shieldu | — | GND | Hlavní zdroj + UTP pár GR |
+| `D2` | GPIO4 | Vstup průtokoměru | PC817 optočlen V1 |
+| `D5` | GPIO14 | TRIG ultrazvuku | JSN-SR04T TRIG přes UTP BR |
+| `D6` | GPIO12 | ECHO ultrazvuku | JSN-SR04T ECHO přes UTP BR/B (přímo, bez děliče) |
+| `5V` | — | 5 V výstup (ze shieldu) | rezerva — externě se nepoužívá |
+| `GND` | — | Společná zem | PC817 G (výstup), JSN-SR04T GND |
 
-> ⚠️ **ECHO pin MUSÍ jít přes dělič napětí!** JSN-SR04T dává 5 V, ESP8266 toleruje max 3,3 V.
+> ✅ **Bez děliče napětí na ECHO** — JSN-SR04T je teď napájen 5 V (ne 12 V), takže ECHO signál je max 5 V, což je v toleranci ESP8266 GPIO.
 
 Podrobné schéma najdeš v `docs/wiring_diagram.html` (schématické) a `docs/wiring_fritzing.html` (pohledové).
 
