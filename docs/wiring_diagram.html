@@ -32,7 +32,8 @@
     <li>✅ Senzor DN32 napájen <strong>12 V</strong> místo 5V — optimální proud LED v modulu PC817</li>
     <li>✅ JSN-SR04T napájen <strong>5 V z pinu Wemos</strong> (= výstup Power Shieldu)</li>
     <li>❌ <strong>Není potřeba dělič napětí na ECHO</strong>! (signál ze SR04T je už proporcionální napájení = max 5 V → bezpečné pro Wemos)</li>
-    <li>❌ Externí step-down LM2596 zbytečný (Power Shield to udělá za nás)</li>
+    <li>❌ Externí step-down pro Wemos zbytečný (Power Shield to udělá za nás)</li>
+    <li>💡 LM2596 použijeme jen lokálně v krabičce u ultrazvuku pro 5V napájení JSN-SR04T</li>
     <li>❌ Druhý napájecí zdroj (USB) odpadá</li>
   </ul>
 </div>
@@ -447,7 +448,8 @@
 <tr><td>Kondenzátor X2 100nF 275V AC</td><td>Odrušení čerpadla</td><td>~30 Kč</td><td>📦 koupit</td></tr>
 <tr><td>Ferritové jádro klipové</td><td>Na CYKY u čerpadla</td><td>~40 Kč</td><td>📦 koupit (volitelné)</td></tr>
 <tr><td>UTP Cat-6 30 m</td><td>Vedení k senzoru</td><td>—</td><td>✅ máš</td></tr>
-<tr><td>~~LM2596 step-down~~</td><td>~~Konverze 12V→5V~~</td><td>~50 Kč</td><td>❌ NEPOTŘEBUJEŠ (Power Shield to dělá)</td></tr>
+<tr><td>~~LM2596 step-down pro Wemos~~</td><td>~~Konverze 12V→5V pro Wemos~~</td><td>—</td><td>❌ NENÍ POTŘEBA (Power Shield to dělá)</td></tr>
+<tr><td><strong>LM2596 step-down pro JSN-SR04T</strong></td><td>Konverze 12V→5V v krabičce u sondy</td><td>~50 Kč nebo už máš</td><td>✅ POTŘEBA</td></tr>
 <tr><td>~~Rezistory 10k + 20k~~ pro dělič ECHO</td><td>~~5V → 3.3V~~</td><td>—</td><td>❌ NEPOTŘEBUJEŠ</td></tr>
 </table>
 
