@@ -78,13 +78,13 @@ water-monitor/
 | DN32 flow meter | Pulse, 1–120 L/min, `F = 4.5 × Q` (powered with 12 V) | ~$11 |
 | JSN-SR04T | Ultrasonic distance sensor, IP67 probe | ~$7 |
 | PC817 optocoupler (module) | Galvanic signal isolation | ~$2 |
-| Mini step-down 12 V → 5 V | Local power for JSN-SR04T in the enclosure | ~$1.5 |
+| LM2596 step-down (12 V → 5 V) | Local power for JSN-SR04T in the enclosure (any LM2596 module with display works) | ~$2 |
 | Resistor 1 kΩ | Series resistor on flow meter output | ~$0.1 |
 | Capacitor 100 nF | Power supply stabilization at the sensor | ~$0.1 |
 | Capacitor 100 nF X2 (275 V AC) | Pump noise suppression | ~$1.5 |
 | Ferrite core | On the pump's power cable | ~$2 |
 
-> 💡 **v2.1 architecture (December 2025):** A single 12 V supply powers everything. The Wemos is fed through the DC Power Shield (7-24 V input), the DN32 sensor runs on 12 V directly (optimal LED current in the PC817), and the JSN-SR04T is powered locally with 5 V via a mini step-down in its enclosure. Compared to v2.0 this eliminates the LM2596 step-down, the 10k+20k voltage divider for ECHO, and the dual power source (USB + ?).
+> 💡 **v2.1 architecture (December 2025):** A single 12 V supply powers everything. The Wemos is fed through the DC Power Shield (7-24 V input), the DN32 sensor runs on 12 V directly (optimal LED current in the PC817), and the JSN-SR04T is powered locally with 5 V via an LM2596 step-down module inside its enclosure. Compared to v2.0 this eliminates the external step-down for the Wemos, the 10k+20k voltage divider for ECHO, and the dual power source (USB + ?).
 
 ### Pin wiring (Wemos D1 Mini)
 
