@@ -17,6 +17,12 @@
 #define PULSES_PER_LITER      (K_FACTOR * 60.0f)    // = 270
 #define MIN_PULSE_INTERVAL_US 800UL                 // Debouncing (max 540 Hz)
 
+// Výpočet průtoku z doby mezi pulzy (místo počítání za sekundu).
+// Ukládáme časové razítko posledních N platných pulzů a průměrujeme periodu.
+// Výhoda: reaguje okamžitě i na 1 pulz za několik sekund (nízký průtok).
+#define FLOW_PERIOD_SAMPLES   8                     // kolik posledních pulzů průměrovat
+#define FLOW_STALE_US         10000000UL            // bez pulzu > 10 s → průtok = 0
+
 // ============================================================================
 // ULTRAZVUK
 // ============================================================================
@@ -30,7 +36,8 @@
 #define FLOW_CALC_INTERVAL       1000UL
 #define MINUTE_INTERVAL          60000UL
 #define HOUR_INTERVAL            3600000UL
-#define TANK_MEASURE_INTERVAL    60000UL            // Hladina každých 60s
+#define TANK_MEASURE_INTERVAL    30000UL            // Hladina každých 30s
+#define PERSIST_INTERVAL         600000UL           // Perzistence totalu každých 10 min (ochrana proti výpadku)
 
 // ============================================================================
 // ACCESS POINT (setup režim)
