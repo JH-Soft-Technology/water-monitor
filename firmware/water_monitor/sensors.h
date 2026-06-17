@@ -26,11 +26,15 @@ float sensorsGetHourVolume();
 // Vrátí kumulativní celkový objem od startu/persistence
 float sensorsGetTotalVolume();
 
+// Uloží aktuální celkový čítač pulzů do flash (volá se periodicky a před restartem/OTA)
+void sensorsPersistTotal();
+
 // Změří hladinu v nádrži (medián, teplotní korekce)
 bool sensorsMeasureTank(TankMeasurement& result);
 
 // Vrátí poslední změřené hodnoty (pro webové UI)
 float sensorsGetLastFlow();
 TankMeasurement sensorsGetLastTank();
+
 
 #endif // SENSORS_H
