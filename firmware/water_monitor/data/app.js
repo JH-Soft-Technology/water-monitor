@@ -246,6 +246,130 @@ $('btn-reset-cal').addEventListener('click', async () => {
   }
 });
 
+// ===== OTA Update =====
+(function () {
+  const dropzone  = $('ota-dropzone');
+  const fileInput = $('ota-file');
+  const fileLabel = $('ota-file-label');
+  const btnUpload = $('btn-ota-upload');
+  const progressWrap = $('ota-progress-wrap');
+  const progressFill = $('ota-progress-fill');
+  const progressText = $('ota-progress-text');
+  const statusEl  = $('ota-status');
+
+  let selectedFile = null;
+
+  function setStatus(type, msg) {
+    statusEl.className = 'ota-status ' + type;
+    statusEl.textContent = msg;
+  }
+
+  function clearStatus() {
+    statusEl.className = 'ota-status';
+    statusEl.textContent = '';
+  }
+
+  function selectFile(file) {
+    if (!file || !file.name.endsWith('.bin')) {
+      toast('Očekává se soubor .bin', 'error');
+      return;
+    }
+    selectedFile = file;
+    fileLabel.textContent = `📦 ${file.name}  (${(file.size / 1024).toFixed(1)} KB)`;
+    fileLabel.className = 'ready';
+    btnUpload.disabled = false;
+    progressWrap.style.display = 'none';
+    progressFill.style.width = '0%';
+    progressText.textContent = '';
+    clearStatus();
+  }
+
+  dropzone.addEventListener('click', () => fileInput.click());
+
+  dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropzone.classList.add('drag-over');
+  });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('drag-over');
+    selectFile(e.dataTransfer.files[0]);
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) selectFile(fileInput.files[0]);
+  });
+
+  btnUpload.addEventListener('click', () => {
+    if (!selectedFile) return;
+    if (!confirm(`Nahrát ${selectedFile.name}?\nZařízení se po nahrání automaticky restartuje.`)) return;
+
+    const formData = new FormData();
+    formData.append('firmware', selectedFile, selectedFile.name);
+
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener('progress', (e) => {
+      if (!e.lengthComputable) return;
+      const pct = Math.round((e.loaded / e.total) * 100);
+      progressFill.style.width = pct + '%';
+      progressText.textContent =
+        `${pct}%  —  ${(e.loaded / 1024).toFixed(0)} / ${(e.total / 1024).toFixed(0)} KB`;
+    });
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status === 200) {
+        progressFill.style.width = '100%';
+        progressText.textContent = '100%  —  hotovo';
+        setStatus('success', '✅ Firmware nahrán. Čekám na restart zařízení…');
+        btnUpload.disabled = true;
+
+        // Po rebootu ESP vrátí odpověď a teprve pak restartuje,
+        // takže počkáme 4s a pak pollujeme /api/status dokud zařízení neodpoví.
+        setTimeout(() => {
+          setStatus('info', '🔄 Zařízení se restartuje, čekám…');
+          let attempts = 0;
+          const poll = setInterval(() => {
+            attempts++;
+            fetch('/api/status', {cache: 'no-store'})
+              .then((r) => {
+                if (r.ok) {
+                  clearInterval(poll);
+                  setStatus('success', '✅ Zařízení je zpět online! Znovu načítám stránku…');
+                  setTimeout(() => location.reload(), 1500);
+                }
+              })
+              .catch(() => {
+                if (attempts >= 30) {
+                  clearInterval(poll);
+                  setStatus('error', '⚠️ Zařízení se nevrátilo do 60 s. Zkontroluj ručně.');
+                }
+              });
+          }, 2000);
+        }, 4000);
+      } else {
+        setStatus('error', `❌ Chyba HTTP ${xhr.status}: ${xhr.responseText}`);
+        btnUpload.disabled = false;
+      }
+    });
+
+    xhr.addEventListener('error', () => {
+      setStatus('error', '❌ Chyba přenosu. Zkontroluj připojení a zkus znovu.');
+      btnUpload.disabled = false;
+    });
+
+    progressWrap.style.display = 'block';
+    progressFill.style.width = '0%';
+    progressText.textContent = '0%';
+    setStatus('info', '📤 Nahrávám firmware…');
+    btnUpload.disabled = true;
+
+    xhr.open('POST', '/update');
+    xhr.send(formData);
+  });
+}());
+
 // ===== Restart =====
 $('btn-restart').addEventListener('click', async () => {
   if (!confirm('Opravdu restartovat ESP?')) return;

@@ -7,11 +7,20 @@
 extern Config config;
 
 // Pulzní čítače - volatile kvůli ISR
-static volatile uint32_t pulseCount = 0;
+static volatile uint32_t pulseCount = 0;          // reset každou 1 s (debug)
 static volatile uint32_t pulseCountMinute = 0;
 static volatile uint32_t pulseCountHour = 0;
 static volatile uint32_t pulseCountTotal = 0;
 static volatile uint32_t lastPulseMicros = 0;
+
+// Diagnostický čítač: všechna raw přerušení vč. těch odfiltrovaných debounce
+static volatile uint32_t rawInterruptCount = 0;
+
+// Kruhový buffer časových razítek posledních N platných pulzů.
+// Průtok se počítá z průměrné periody → funguje i při 1 pulzu za několik sekund.
+static volatile uint32_t pulseTimes[FLOW_PERIOD_SAMPLES];
+static volatile uint8_t  pulseTimesWr  = 0;   // index dalšího zápisu
+static volatile uint8_t  pulseTimesN   = 0;   // počet platných záznamů (0..FLOW_PERIOD_SAMPLES)
 
 // NewPing instance pro ultrazvuk
 static NewPing* sonar = nullptr;
@@ -24,12 +33,26 @@ static TankMeasurement lastTank = {0, 0, 0, 0, false};
 // ISR - detekce pulzu z optočlenu
 // ============================================================================
 static void IRAM_ATTR onPulse() {
+  rawInterruptCount++;
+
   uint32_t now = micros();
   if (now - lastPulseMicros < MIN_PULSE_INTERVAL_US) {
     return;  // Debouncing
   }
+
+  // Pokud byl průtok přerušen déle než FLOW_STALE_US, stará razítka
+  // v bufferu jsou neplatná — resetujeme, aby se nepromíchala s novými.
+  if (pulseTimesN > 0 && (now - lastPulseMicros) > FLOW_STALE_US) {
+    pulseTimesWr = 0;
+    pulseTimesN  = 0;
+  }
+
   lastPulseMicros = now;
-  
+
+  pulseTimes[pulseTimesWr] = now;
+  pulseTimesWr = (pulseTimesWr + 1) % FLOW_PERIOD_SAMPLES;
+  if (pulseTimesN < FLOW_PERIOD_SAMPLES) pulseTimesN++;
+
   pulseCount++;
   pulseCountMinute++;
   pulseCountHour++;
@@ -53,14 +76,57 @@ void sensorsInit() {
 }
 
 // ============================================================================
-float sensorsCalculateFlow(unsigned long elapsed_ms) {
+float sensorsCalculateFlow(unsigned long /*elapsed_ms*/) {
+  // Zkopíruj volatile data s vypnutými přerušeními
   noInterrupts();
-  uint32_t pulses = pulseCount;
+  uint32_t pulses  = pulseCount;
   pulseCount = 0;
+  uint32_t rawISR  = rawInterruptCount;
+  rawInterruptCount = 0;
+  uint8_t  n       = pulseTimesN;
+  uint8_t  wr      = pulseTimesWr;
+  uint32_t ts[FLOW_PERIOD_SAMPLES];
+  for (uint8_t i = 0; i < FLOW_PERIOD_SAMPLES; i++) ts[i] = pulseTimes[i];
+  uint32_t lastTs  = lastPulseMicros;
   interrupts();
-  
-  float frequency = (float)pulses * 1000.0f / (float)elapsed_ms;
-  lastFlowLpm = frequency / K_FACTOR;
+
+  if (rawISR > 0 || pulses > 0) {
+    Serial.printf("[FLOW] raw ISR: %u  filtrované pulzy: %u\n", rawISR, pulses);
+  }
+
+  // Bez pulzu déle než FLOW_STALE_US → průtok = 0
+  if (n == 0 || (micros() - lastTs) > FLOW_STALE_US) {
+    lastFlowLpm = 0.0f;
+    return 0.0f;
+  }
+
+  // Jen 1 pulz — odhadni průtok z doby uplynulé od jeho přijetí.
+  // Odhad je horní hranicí (klesá čím déle druhý pulz nepřichází).
+  if (n < 2) {
+    uint32_t elapsed = micros() - lastTs;
+    if (elapsed >= 200000UL) {  // počkej aspoň 200 ms
+      lastFlowLpm = (1000000.0f / (float)elapsed) / K_FACTOR;
+      Serial.printf("[FLOW] 1 pulz, elapsed %lu µs → odhad %.3f L/min\n",
+                    elapsed, lastFlowLpm);
+    }
+    return lastFlowLpm;
+  }
+
+  // Nejstarší záznam v bufferu: (wr - n) mod N
+  // Nejnovější záznam:          (wr - 1) mod N
+  uint8_t  idxOld  = (uint8_t)((wr + FLOW_PERIOD_SAMPLES - n) % FLOW_PERIOD_SAMPLES);
+  uint8_t  idxNew  = (uint8_t)((wr + FLOW_PERIOD_SAMPLES - 1) % FLOW_PERIOD_SAMPLES);
+  uint32_t span    = ts[idxNew] - ts[idxOld];  // µs; správně i po přetečení uint32
+
+  if (span == 0) return lastFlowLpm;
+
+  // průměrná frekvence = (n-1) intervalů / celkový čas v sekundách
+  float freqHz   = (float)(n - 1) * 1000000.0f / (float)span;
+  lastFlowLpm    = freqHz / K_FACTOR;
+
+  Serial.printf("[FLOW] %u pulzů, span %lu µs → %.3f Hz → %.3f L/min\n",
+                n, span, freqHz, lastFlowLpm);
+
   return lastFlowLpm;
 }
 
@@ -81,13 +147,21 @@ float sensorsGetHourVolume() {
   noInterrupts();
   uint32_t pulsesHour = pulseCountHour;
   pulseCountHour = 0;
+  interrupts();
+
+  return (float)pulsesHour / PULSES_PER_LITER;
+}
+
+// ============================================================================
+// Uloží aktuální total do flash. Perzistuje se jen pokud se hodnota změnila
+// (configPersistTotalPulses má vlastní ochranu), takže opakované volání
+// nezbytečně neopotřebovává flash.
+void sensorsPersistTotal() {
+  noInterrupts();
   uint32_t pulsesTotal = pulseCountTotal;
   interrupts();
-  
-  // Periodicky persistuj total (jednou za hodinu)
+
   configPersistTotalPulses(pulsesTotal);
-  
-  return (float)pulsesHour / PULSES_PER_LITER;
 }
 
 // ============================================================================
