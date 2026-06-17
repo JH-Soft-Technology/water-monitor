@@ -185,8 +185,25 @@
       </div>
       
       <div class="card">
-        <h3>Firmware update</h3>
-        <p class="hint">Otevři <a href="/update" target="_blank">/update</a> pro nahrání nového .bin firmwaru.</p>
+        <h3>Firmware update (OTA)</h3>
+        <p class="hint">Vyber nebo přetáhni soubor <strong>firmware.bin</strong>. Zařízení se po nahrání automaticky restartuje.</p>
+
+        <div id="ota-dropzone" class="ota-dropzone">
+          <div class="ota-icon">📦</div>
+          <div id="ota-file-label">Přetáhni .bin soubor nebo klikni pro výběr</div>
+          <input type="file" id="ota-file" accept=".bin">
+        </div>
+
+        <div id="ota-progress-wrap">
+          <div class="progress-bar">
+            <div class="progress-fill" id="ota-progress-fill"></div>
+          </div>
+          <div id="ota-progress-text" class="hint" style="text-align:center"></div>
+        </div>
+
+        <div id="ota-status" class="ota-status"></div>
+
+        <button id="btn-ota-upload" class="btn-primary" disabled>📤 Nahrát firmware</button>
       </div>
       
       <div class="card">

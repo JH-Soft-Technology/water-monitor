@@ -254,3 +254,73 @@ th {
 .toast.error { background: var(--danger); }
 
 a { color: var(--primary); }
+
+/* ===== OTA Update ===== */
+.ota-dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 2rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin: 1rem 0;
+  user-select: none;
+}
+
+.ota-dropzone:hover, .ota-dropzone.drag-over {
+  border-color: var(--primary);
+  background: #f0f9ff;
+}
+
+.ota-dropzone input[type="file"] {
+  display: none;
+}
+
+.ota-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+#ota-file-label {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+#ota-file-label.ready {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+#ota-progress-wrap {
+  display: none;
+  margin: 0.75rem 0;
+}
+
+.progress-bar {
+  background: var(--border);
+  border-radius: 999px;
+  height: 14px;
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--primary), #38bdf8);
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.ota-status {
+  display: none;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin: 0.75rem 0;
+  font-size: 0.95rem;
+}
+
+.ota-status.info    { display: block; background: #dbeafe; color: #1e40af; }
+.ota-status.success { display: block; background: #d1fae5; color: #065f46; }
+.ota-status.error   { display: block; background: #fee2e2; color: #991b1b; }

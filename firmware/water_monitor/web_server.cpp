@@ -50,7 +50,7 @@ static bool handleFileRead(String path) {
 // ============================================================================
 static void handleApiStatus() {
   StaticJsonDocument<512> doc;
-  
+
   doc["fw_version"] = FW_VERSION;
   doc["uptime_s"] = millis() / 1000;
   doc["free_heap"] = ESP.getFreeHeap();
@@ -60,10 +60,9 @@ static void handleApiStatus() {
   doc["wifi_rssi"] = WiFi.RSSI();
   doc["ap_ip"] = WiFi.softAPIP().toString();
   doc["mqtt_connected"] = mqttIsConnected();
-  
+
   doc["flow_lpm"] = sensorsGetLastFlow();
   doc["total_volume_l"] = sensorsGetTotalVolume();
-  
   TankMeasurement tank = sensorsGetLastTank();
   doc["tank_valid"] = tank.valid;
   doc["tank_distance_cm"] = tank.distance_cm;
@@ -232,6 +231,7 @@ static void handleApiResetCalibration() {
 // POST /api/restart
 // ============================================================================
 static void handleApiRestart() {
+  sensorsPersistTotal();  // ulož total před plánovaným restartem (žádná ztráta)
   server.send(200, "application/json", "{\"status\":\"restarting\"}");
   delay(500);
   ESP.restart();
@@ -273,6 +273,15 @@ void webServerStart() {
   
   // OTA update na /update
   httpUpdater.setup(&server, "/update");
+
+  // Ulož total na začátku OTA přenosu (před zápisem hlavní části firmwaru).
+  // onProgress se volá opakovaně; configPersistTotalPulses zapíše jen při
+  // změně, takže opakovaná volání flash neopotřebovávají.
+  Update.onProgress([](size_t cur, size_t /*total*/) {
+    if (cur <= HTTP_UPLOAD_BUFLEN) {   // jen první chunk přenosu
+      sensorsPersistTotal();
+    }
+  });
   
   // Statické soubory z LittleFS
   server.onNotFound([]() {

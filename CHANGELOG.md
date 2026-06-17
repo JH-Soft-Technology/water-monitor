@@ -5,6 +5,23 @@ Všechny významné změny v tomto projektu jsou dokumentovány zde.
 Formát vychází z [Keep a Changelog](https://keepachangelog.com/),
 projekt používá [sémantické verzování](https://semver.org/lang/cs/).
 
+## [2.2.0] - 2026-06-17
+
+### Změněno
+- **Výpočet průtoku přepracován na měření periody** mezi pulzy (kruhový buffer časových razítek posledních 8 pulzů) místo počítání pulzů za 1 s. Spolehlivě měří i nízké průtoky (1–2 pulzy/s), kde předchozí metoda oscilovala mezi 0 a chybnou hodnotou.
+- **Interval měření hladiny** zkrácen z 60 s na **30 s** (svěžejší data při napouštění i odčerpávání).
+- **OTA stránka** přepracována do designu zbytku UI — drag&drop, indikátor průběhu nahrávání a stavové hlášky, čekání na restart zařízení.
+
+### Přidáno
+- **Odhad průtoku z jednoho pulzu** — při velmi pomalém toku se průtok odhadne z doby uplynulé od posledního pulzu (horní hranice).
+- **Reset bufferu při výpadku toku** (> 10 s bez pulzu) — stará razítka se nemíchají s novými.
+- **Ochrana celkového čítače proti ztrátě:**
+  - perzistence **každých 10 min** (max 10 min ztráta při výpadku proudu místo až 60 min),
+  - uložení totalu **před plánovaným restartem** (`/api/restart`) a **na začátku OTA** přenosu → plánované reboty a aktualizace firmwaru bez ztráty.
+
+### Opraveno
+- Odstraněn diagnostický čítač `flow_raw_interrupts` z `/api/status` — způsoboval souběh (race condition) s výpočtem průtoku a zkresloval debug výpis.
+
 ## [2.1.0] - 2025
 
 ### Změněno

@@ -67,6 +67,7 @@ unsigned long lastMinutePublish = 0;
 unsigned long lastHourPublish = 0;
 unsigned long lastTankMeasure = 0;
 unsigned long lastWiFiCheck = 0;
+unsigned long lastPersist = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -138,7 +139,8 @@ void setup() {
   lastHourPublish = now;
   lastTankMeasure = now - TANK_MEASURE_INTERVAL + 5000;  // První měření za 5s
   lastWiFiCheck = now;
-  
+  lastPersist = now;
+
   Serial.println("=== Setup hotov, monitoring zahájen ===\n");
 }
 
@@ -188,15 +190,21 @@ void loop() {
     mqttPublishHourVolume(volumeHour);
   }
   
-  // ---- Každých 60s: měření hladiny ----
+  // ---- Každých 30s: měření hladiny ----
   if (now - lastTankMeasure >= TANK_MEASURE_INTERVAL) {
     lastTankMeasure = now;
-    
+
     TankMeasurement tank;
     if (sensorsMeasureTank(tank)) {
       mqttPublishTank(tank);
     }
   }
-  
+
+  // ---- Každých 10 min: perzistence celkového čítače (ochrana proti výpadku) ----
+  if (now - lastPersist >= PERSIST_INTERVAL) {
+    lastPersist = now;
+    sensorsPersistTotal();
+  }
+
   delay(10);
 }
