@@ -36,5 +36,17 @@ bool sensorsMeasureTank(TankMeasurement& result);
 float sensorsGetLastFlow();
 TankMeasurement sensorsGetLastTank();
 
+// ----------------------------------------------------------------------------
+// Kalibrační čítač pulzů (od posledního resetu)
+// ----------------------------------------------------------------------------
+// Slouží pro určení K-faktoru senzoru reálným měřením:
+//   1) Resetuj čítač přes /api/pulses/reset
+//   2) Odčerpej známé množství vody (např. 10 L do kalibrované konve)
+//   3) Přečti počet pulzů z /api/status nebo Kalibrace v UI
+//   4) Reálný K-faktor [Hz na L/min] = pulses / (10L * 60s)
+// Čítač NENÍ persistován (resetuje se i při restartu ESP).
+uint32_t sensorsGetCalibrationPulses();
+void     sensorsResetCalibrationPulses();
+
 
 #endif // SENSORS_H
