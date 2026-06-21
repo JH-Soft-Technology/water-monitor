@@ -1,5 +1,5 @@
 # ============================================================================
-# Water Monitor - Lovelace Dashboard
+# Water Monitor - Lovelace Dashboard (v2.2)
 # ============================================================================
 # Použití:
 #   1. Otevři Home Assistant
@@ -7,19 +7,26 @@
 #      nebo otevři existující v "Edit Dashboard" mode → "Edit in YAML"
 #   3. Vlož celý obsah níže (od 'title:')
 #   4. Ulož
-# 
+#
 # Předpoklady:
 #   - MQTT integration je aktivní v HA
-#   - Z ESP přicházejí MQTT discovery zprávy, takže máš entity:
-#       sensor.prutok_aktualni
-#       sensor.objem_za_minutu
-#       sensor.objem_za_hodinu
-#       sensor.objem_celkem
-#       sensor.hladina_v_nadrzi
-#       sensor.naplneni_nadrze
-#       sensor.objem_v_nadrzi
-#       sensor.vzdalenost_senzor
-# 
+#   - ESP s firmware v2.2+ posílá MQTT discovery, takže máš entity:
+#       sensor.prutok_aktualni         (live průtok L/min)
+#       sensor.objem_za_minutu         (last minute L)
+#       sensor.objem_za_hodinu         (last hour L)
+#       sensor.objem_celkem            (kumulativní L od startu)
+#       sensor.vzdalenost_senzor       (cm)
+#       sensor.hladina_v_nadrzi        (cm)
+#       sensor.objem_v_nadrzi          (L)
+#       sensor.naplneni_nadrze         (%)
+#       sensor.spotreba_dnes           (firmware-managed denní spotřeba)
+#       sensor.spotreba_tento_tyden    (firmware-managed týdenní spotřeba)
+#       sensor.spotreba_tento_mesic    (firmware-managed měsíční spotřeba)
+#       sensor.spotreba_tento_rok      (firmware-managed roční spotřeba)
+#
+# Pozn.: Period stats (today/week/month/year) jsou teď řízené přímo firmwarem
+#   přes NTP - resetují se vždy v 00:00 CET/CEST. Není potřeba HA utility_meter.
+#
 # Pokud máš jiné názvy entit (záleží na jazyce HA a tvém device_id),
 # najdi je v Vývojářské nástroje → Stavy a uprav v této YAML.
 # ============================================================================
@@ -32,17 +39,17 @@ views:
     type: sections
     max_columns: 3
     sections:
-      
-      # ========================================================================
-      # SEKCE 1: PŘEHLED NÁDRŽE
-      # ========================================================================
+
+      # ======================================================================
+      # SEKCE 1: STAV NÁDRŽE
+      # ======================================================================
       - type: grid
         column_span: 1
         cards:
           - type: heading
             heading: 💧 Stav nádrže
             heading_style: title
-          
+
           - type: gauge
             entity: sensor.naplneni_nadrze
             name: Naplnění
@@ -54,7 +61,7 @@ views:
               yellow: 15
               red: 0
             needle: true
-          
+
           - type: entities
             title: Detaily nádrže
             show_header_toggle: false
@@ -68,17 +75,17 @@ views:
               - entity: sensor.vzdalenost_senzor
                 name: Vzdálenost od senzoru
                 icon: mdi:arrow-up-down
-      
-      # ========================================================================
+
+      # ======================================================================
       # SEKCE 2: AKTUÁLNÍ PRŮTOK
-      # ========================================================================
+      # ======================================================================
       - type: grid
         column_span: 1
         cards:
           - type: heading
             heading: 🚰 Průtok
             heading_style: title
-          
+
           - type: gauge
             entity: sensor.prutok_aktualni
             name: Aktuální průtok
@@ -90,9 +97,9 @@ views:
               yellow: 50
               red: 70
             needle: true
-          
+
           - type: entities
-            title: Spotřeba
+            title: Objemy
             show_header_toggle: false
             entities:
               - entity: sensor.objem_za_minutu
@@ -104,9 +111,23 @@ views:
               - entity: sensor.objem_celkem
                 name: Celkem od startu
                 icon: mdi:counter
-              - type: divider
+
+      # ======================================================================
+      # SEKCE 3: SPOTŘEBA - SOUHRN OBDOBÍ (NOVÉ ve v2.2)
+      # ======================================================================
+      - type: grid
+        column_span: 1
+        cards:
+          - type: heading
+            heading: 📊 Spotřeba (období)
+            heading_style: title
+
+          - type: entities
+            title: Souhrny období
+            show_header_toggle: false
+            entities:
               - entity: sensor.spotreba_dnes
-                name: Spotřebováno dnes
+                name: Dnes
                 icon: mdi:calendar-today
               - entity: sensor.spotreba_tento_tyden
                 name: Tento týden
@@ -114,51 +135,40 @@ views:
               - entity: sensor.spotreba_tento_mesic
                 name: Tento měsíc
                 icon: mdi:calendar-month
-      
-      # ========================================================================
-      # SEKCE 3: VIZUALIZACE NÁDRŽE
-      # ========================================================================
-      - type: grid
-        column_span: 1
-        cards:
-          - type: heading
-            heading: 📊 Vizualizace
-            heading_style: title
-          
-          - type: vertical-stack
-            cards:
-              # Barová vizualizace hladiny (custom pomocí entity-filter)
-              - type: gauge
-                entity: sensor.hladina_v_nadrzi
-                name: Hladina
-                unit: 'cm'
-                min: 0
-                max: 173
-                severity:
-                  green: 50
-                  yellow: 25
-                  red: 0
-              
-              # Aktuální průtok bar
-              - type: glance
-                title: Status
-                columns: 2
-                entities:
-                  - entity: sensor.prutok_aktualni
-                    name: Průtok
-                  - entity: sensor.naplneni_nadrze
-                    name: Plnost
-      
-      # ========================================================================
-      # SEKCE 4: GRAFY PRŮTOKU (24h)
-      # ========================================================================
+              - entity: sensor.spotreba_tento_rok
+                name: Tento rok
+                icon: mdi:calendar
+
+          - type: glance
+            title: Souhrny období
+            columns: 4
+            show_state: true
+            show_name: true
+            show_icon: true
+            entities:
+              - entity: sensor.spotreba_dnes
+                name: Den
+                icon: mdi:calendar-today
+              - entity: sensor.spotreba_tento_tyden
+                name: Týden
+                icon: mdi:calendar-week
+              - entity: sensor.spotreba_tento_mesic
+                name: Měsíc
+                icon: mdi:calendar-month
+              - entity: sensor.spotreba_tento_rok
+                name: Rok
+                icon: mdi:calendar
+
+      # ======================================================================
+      # SEKCE 4: GRAFY PRŮTOKU (24 h)
+      # ======================================================================
       - type: grid
         column_span: 3
         cards:
           - type: heading
             heading: 📈 Průtok za 24 hodin
             heading_style: title
-          
+
           - type: history-graph
             title: Aktuální průtok
             hours_to_show: 24
@@ -166,17 +176,17 @@ views:
             entities:
               - entity: sensor.prutok_aktualni
                 name: Průtok L/min
-      
-      # ========================================================================
+
+      # ======================================================================
       # SEKCE 5: GRAFY HLADINY (7 dnů)
-      # ========================================================================
+      # ======================================================================
       - type: grid
         column_span: 3
         cards:
           - type: heading
             heading: 📉 Hladina v nádrži (7 dnů)
             heading_style: title
-          
+
           - type: history-graph
             title: Naplnění nádrže
             hours_to_show: 168
@@ -186,47 +196,71 @@ views:
                 name: Naplnění %
               - entity: sensor.objem_v_nadrzi
                 name: Objem L
-      
-      # ========================================================================
-      # SEKCE 6: STATISTIKY SPOTŘEBY
-      # ========================================================================
+
+      # ======================================================================
+      # SEKCE 6: GRAFY SPOTŘEBY - DEN / TÝDEN / MĚSÍC / ROK (NOVÉ ve v2.2)
+      # ======================================================================
       - type: grid
         column_span: 3
         cards:
           - type: heading
-            heading: 📊 Spotřeba (statistika)
+            heading: 📊 Spotřeba - grafy období
             heading_style: title
-          
-          - type: statistics-graph
-            title: Hodinová spotřeba (24 hodin)
-            chart_type: bar
-            period: hour
-            days_to_show: 1
-            stat_types:
-              - state
-            entities:
-              - sensor.objem_za_hodinu
-          
+
+          # Denní spotřeba za posledních 30 dnů
           - type: statistics-graph
             title: Denní spotřeba (30 dnů)
             chart_type: bar
             period: day
             days_to_show: 30
             stat_types:
-              - state
+              - max
             entities:
               - sensor.spotreba_dnes
-      
-      # ========================================================================
+
+          # Týdenní spotřeba za posledních ~12 týdnů
+          - type: statistics-graph
+            title: Týdenní spotřeba (3 měsíce)
+            chart_type: bar
+            period: week
+            days_to_show: 90
+            stat_types:
+              - max
+            entities:
+              - sensor.spotreba_tento_tyden
+
+          # Měsíční spotřeba za posledních 12 měsíců
+          - type: statistics-graph
+            title: Měsíční spotřeba (12 měsíců)
+            chart_type: bar
+            period: month
+            days_to_show: 365
+            stat_types:
+              - max
+            entities:
+              - sensor.spotreba_tento_mesic
+
+          # Roční spotřeba (vícero roků)
+          - type: statistics-graph
+            title: Roční spotřeba
+            chart_type: bar
+            period: month
+            days_to_show: 730
+            stat_types:
+              - max
+            entities:
+              - sensor.spotreba_tento_rok
+
+      # ======================================================================
       # SEKCE 7: SYSTÉM
-      # ========================================================================
+      # ======================================================================
       - type: grid
         column_span: 3
         cards:
           - type: heading
             heading: ⚙️ Systém
             heading_style: subtitle
-          
+
           - type: entities
             title: Status zařízení
             show_header_toggle: false

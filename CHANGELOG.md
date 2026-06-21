@@ -5,6 +5,52 @@ Všechny významné změny v tomto projektu jsou dokumentovány zde.
 Formát vychází z [Keep a Changelog](https://keepachangelog.com/),
 projekt používá [sémantické verzování](https://semver.org/lang/cs/).
 
+## [2.3.0] - 2026
+
+### Přidáno
+- **Period statistics modul** (`period_stats.h/cpp`) — statistika spotřeby vody
+  za **den / týden / měsíc / rok** s automatickým resetem dle reálného času.
+  Inspirováno modulem v [ha-rain-sensor](https://github.com/JH-Soft-Technology/ha-rain-sensor).
+- **NTP synchronizace** (CET/CEST s automatickým DST) — primární `tik.cesnet.cz`,
+  fallback `pool.ntp.org`, `time.nist.gov`. POSIX TZ string řeší letní/zimní čas.
+- **Skalární akumulátory**: `today_l`, `week_l`, `month_l`, `year_l`.
+- **Histogramy pro grafy**: `hourly[24]`, `daily_week[7]` (Po-Ne),
+  `daily_month[31]`, `monthly[12]`.
+- **Rollover logika** — kontrola každých 30 s, kaskádní reset
+  (rok→měsíc→týden→den). Resety jsou perzistentní (přežijí restart).
+- **Perzistence v LittleFS**:
+  - `/stats.json` — skalární akumulátory + ref. indexy
+  - `/history.json` — histogramy (cca 1.5 KB)
+- **MQTT publikace nových topics**:
+  - `<device_id>/consumption/today` — denní spotřeba [L]
+  - `<device_id>/consumption/week` — týdenní spotřeba [L]
+  - `<device_id>/consumption/month` — měsíční spotřeba [L]
+  - `<device_id>/consumption/year` — roční spotřeba [L]
+- **HA auto-discovery** pro 4 nové sensory (mdi:calendar-today/week/month/calendar)
+- **Nové REST API endpointy**:
+  - `GET /api/stats` — kompletní period stats vč. histogramů
+  - `POST /api/stats/reset` — vynulování všech akumulátorů a historie
+- **HA dashboard rozšířen** o sekci „Spotřeba (období)" + 4 statistics-graph
+  bar charty (den/týden/měsíc/rok).
+- **HA helpers.yaml zjednodušeno** — utility_meter sekce odstraněna
+  (firmware to teď řídí přímo přes NTP, žádné HA-side workaroundy).
+
+### Změněno
+- **FW_VERSION** `2.2` → `2.3`
+- **mqtt_handler** rozšířen o `mqttPublishPeriodStats()` (publikuje 4 topics
+  jednorázově).
+- **water_monitor.ino**: hlavní loop volá `statsLoop()` a `statsAddVolume()`
+  z minutového callbacku, periodická publikace každých 60 s.
+- **/api/status** vrací navíc objekt `stats` s today/week/month/year.
+
+### Pozn. ke kompatibilitě
+- Hardware se **nemění** (v2.1 12V architektura zůstává).
+- Po prvním spuštění FW potřebuje NTP odezvu (typicky 5-30 s po WiFi connect)
+  pro aktivaci rollover logiky. Před NTP sync se objemy akumulují,
+  ale nedistribuují do histogramů (až do okamžiku, kdy NTP odpoví).
+- Stávající utility_meter v HA configuration.yaml můžeš odstranit,
+  ale není to nutné — entity z firmware mají jiná unique_id.
+
 ## [2.2.0] - 2026-06-17
 
 ### Změněno

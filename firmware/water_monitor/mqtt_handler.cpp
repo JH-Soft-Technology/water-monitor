@@ -20,6 +20,11 @@ static String topicLevel;
 static String topicVolume;
 static String topicPercent;
 static String topicStatus;
+// Period statistics
+static String topicConsumptionToday;
+static String topicConsumptionWeek;
+static String topicConsumptionMonth;
+static String topicConsumptionYear;
 
 static unsigned long lastReconnectAttempt = 0;
 
@@ -37,6 +42,11 @@ static void buildTopics() {
   topicVolume   = base + "/tank/volume_liters";
   topicPercent  = base + "/tank/fill_percent";
   topicStatus   = base + "/status";
+  // Period stats - skupina "consumption" (spotřeba)
+  topicConsumptionToday = base + "/consumption/today";
+  topicConsumptionWeek  = base + "/consumption/week";
+  topicConsumptionMonth = base + "/consumption/month";
+  topicConsumptionYear  = base + "/consumption/year";
 }
 
 // ============================================================================
@@ -96,6 +106,7 @@ static void publishHADiscoverySensor(
 static void publishHomeAssistantDiscovery() {
   Serial.println("Publikuji HA discovery...");
   
+  // ---- Live data ----
   publishHADiscoverySensor("flow_lpm",      "Průtok aktuální",  topicFlow,
                            "L/min", "", "measurement", "mdi:water-pump", 2);
   publishHADiscoverySensor("volume_minute", "Objem za minutu",  topicVolMin,
@@ -104,6 +115,8 @@ static void publishHomeAssistantDiscovery() {
                            "L", "water", "total_increasing", "mdi:water", 3);
   publishHADiscoverySensor("volume_total",  "Objem celkem",     topicVolTotal,
                            "L", "water", "total_increasing", "mdi:counter", 3);
+
+  // ---- Tank ----
   publishHADiscoverySensor("distance_cm",   "Vzdálenost senzor", topicDistance,
                            "cm", "distance", "measurement", "mdi:arrow-up-down", 1);
   publishHADiscoverySensor("level_cm",      "Hladina v nádrži", topicLevel,
@@ -112,7 +125,21 @@ static void publishHomeAssistantDiscovery() {
                            "L", "water", "measurement", "mdi:cup-water", 0);
   publishHADiscoverySensor("fill_percent",  "Naplnění nádrže",  topicPercent,
                            "%", "", "measurement", "mdi:gauge", 1);
-  
+
+  // ---- Period statistics (spotřeba) ----
+  // Pozn.: NEpoužíváme device_class "water" + state_class "total_increasing",
+  // protože hodnoty se reseují (today/week/month/year) - to by HA energy dashboard
+  // matlo. Místo toho state_class "measurement", které je správně pro
+  // reseující se akumulátory za období.
+  publishHADiscoverySensor("consumption_today", "Spotřeba dnes",      topicConsumptionToday,
+                           "L", "", "measurement", "mdi:calendar-today", 1);
+  publishHADiscoverySensor("consumption_week",  "Spotřeba tento týden", topicConsumptionWeek,
+                           "L", "", "measurement", "mdi:calendar-week",  1);
+  publishHADiscoverySensor("consumption_month", "Spotřeba tento měsíc", topicConsumptionMonth,
+                           "L", "", "measurement", "mdi:calendar-month", 1);
+  publishHADiscoverySensor("consumption_year",  "Spotřeba tento rok",  topicConsumptionYear,
+                           "L", "", "measurement", "mdi:calendar",      1);
+
   Serial.println("HA discovery hotovo.");
 }
 
@@ -181,6 +208,14 @@ void mqttPublishTank(const TankMeasurement& tank) {
   publishFloat(topicLevel, tank.level_cm, 1);
   publishFloat(topicVolume, tank.volume_l, 0);
   publishFloat(topicPercent, tank.fill_percent, 1);
+}
+
+void mqttPublishPeriodStats(const PeriodStats& s) {
+  if (!mqttClient.connected()) return;
+  publishFloat(topicConsumptionToday, s.today_l, 1);
+  publishFloat(topicConsumptionWeek,  s.week_l,  1);
+  publishFloat(topicConsumptionMonth, s.month_l, 1);
+  publishFloat(topicConsumptionYear,  s.year_l,  1);
 }
 
 bool mqttIsConnected() {

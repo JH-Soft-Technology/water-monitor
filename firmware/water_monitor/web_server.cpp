@@ -3,6 +3,7 @@
 #include "config_storage.h"
 #include "calibration.h"
 #include "sensors.h"
+#include "period_stats.h"
 #include "mqtt_handler.h"
 
 #include <ESP8266WebServer.h>
@@ -69,6 +70,15 @@ static void handleApiStatus() {
   doc["tank_level_cm"] = tank.level_cm;
   doc["tank_volume_l"] = tank.volume_l;
   doc["tank_fill_percent"] = tank.fill_percent;
+
+  // Period statistics summary (jen skaláry; histogram je v /api/stats)
+  PeriodStats s = statsGet();
+  JsonObject stats = doc.createNestedObject("stats");
+  stats["today_l"]    = s.today_l;
+  stats["week_l"]     = s.week_l;
+  stats["month_l"]    = s.month_l;
+  stats["year_l"]     = s.year_l;
+  stats["time_valid"] = s.time_valid;
   
   String response;
   serializeJson(doc, response);
@@ -228,6 +238,57 @@ static void handleApiResetCalibration() {
 }
 
 // ============================================================================
+// API: GET /api/stats
+// Vrátí kompletní period stats vč. histogramů (pro grafy ve web UI)
+// ============================================================================
+static void handleApiGetStats() {
+  // Velký buffer kvůli histogramům (24 + 7 + 31 + 12 = 74 floatů)
+  DynamicJsonDocument doc(2048);
+
+  PeriodStats s = statsGet();
+  doc["today_l"]    = s.today_l;
+  doc["week_l"]     = s.week_l;
+  doc["month_l"]    = s.month_l;
+  doc["year_l"]     = s.year_l;
+  doc["time_valid"] = s.time_valid;
+
+  doc["active_hour"]    = statsGetActiveHour();
+  doc["active_weekday"] = statsGetActiveWeekday();
+  doc["active_mday"]    = statsGetActiveMday();
+  doc["active_month"]   = statsGetActiveMonth();
+
+  // Histogramy (zaokrouhlené na 1 desetinné místo)
+  JsonArray ah = doc.createNestedArray("hourly");
+  const float* h = statsGetHourly();
+  for (int i = 0; i < 24; i++) ah.add(round(h[i] * 10) / 10.0f);
+
+  JsonArray aw = doc.createNestedArray("daily_week");
+  const float* dw = statsGetDailyWeek();
+  for (int i = 0; i < 7; i++) aw.add(round(dw[i] * 10) / 10.0f);
+
+  JsonArray am = doc.createNestedArray("daily_month");
+  const float* dm = statsGetDailyMonth();
+  for (int i = 0; i < 31; i++) am.add(round(dm[i] * 10) / 10.0f);
+
+  JsonArray ay = doc.createNestedArray("monthly");
+  const float* mo = statsGetMonthly();
+  for (int i = 0; i < 12; i++) ay.add(round(mo[i] * 10) / 10.0f);
+
+  String response;
+  serializeJson(doc, response);
+  server.send(200, "application/json", response);
+}
+
+// ============================================================================
+// API: POST /api/stats/reset
+// Vynuluje všechny period stats akumulátory a histogramy
+// ============================================================================
+static void handleApiResetStats() {
+  statsResetAll();
+  server.send(200, "application/json", "{\"ok\":true}");
+}
+
+// ============================================================================
 // POST /api/restart
 // ============================================================================
 static void handleApiRestart() {
@@ -268,6 +329,8 @@ void webServerStart() {
   server.on("/api/calibration/add",    HTTP_POST, handleApiAddCalibrationPoint);
   server.on("/api/calibration/remove", HTTP_POST, handleApiRemoveCalibrationPoint);
   server.on("/api/calibration/reset",  HTTP_POST, handleApiResetCalibration);
+  server.on("/api/stats",        HTTP_GET,  handleApiGetStats);
+  server.on("/api/stats/reset",  HTTP_POST, handleApiResetStats);
   server.on("/api/restart",      HTTP_POST, handleApiRestart);
   server.on("/api/wifi/scan",    HTTP_GET,  handleApiWiFiScan);
   
