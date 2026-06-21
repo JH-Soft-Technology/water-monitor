@@ -11,6 +11,7 @@ static volatile uint32_t pulseCount = 0;          // reset každou 1 s (debug)
 static volatile uint32_t pulseCountMinute = 0;
 static volatile uint32_t pulseCountHour = 0;
 static volatile uint32_t pulseCountTotal = 0;
+static volatile uint32_t pulseCountCalibration = 0;  // kalibrační čítač, reset přes API/UI nebo restart
 static volatile uint32_t lastPulseMicros = 0;
 
 // Diagnostický čítač: všechna raw přerušení vč. těch odfiltrovaných debounce
@@ -57,6 +58,7 @@ static void IRAM_ATTR onPulse() {
   pulseCountMinute++;
   pulseCountHour++;
   pulseCountTotal++;
+  pulseCountCalibration++;
 }
 
 // ============================================================================
@@ -235,4 +237,20 @@ float sensorsGetLastFlow() {
 
 TankMeasurement sensorsGetLastTank() {
   return lastTank;
+}
+
+// ============================================================================
+// Kalibrační čítač pulzů (pro určení K-faktoru reálným měřením)
+// ============================================================================
+uint32_t sensorsGetCalibrationPulses() {
+  noInterrupts();
+  uint32_t v = pulseCountCalibration;
+  interrupts();
+  return v;
+}
+
+void sensorsResetCalibrationPulses() {
+  noInterrupts();
+  pulseCountCalibration = 0;
+  interrupts();
 }
