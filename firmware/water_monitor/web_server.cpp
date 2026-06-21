@@ -64,6 +64,14 @@ static void handleApiStatus() {
 
   doc["flow_lpm"] = sensorsGetLastFlow();
   doc["total_volume_l"] = sensorsGetTotalVolume();
+  
+  // Kalibrační čítač - počet pulzů od posledního resetu (pro určení K-faktoru)
+  uint32_t calibPulses = sensorsGetCalibrationPulses();
+  doc["calibration_pulses"] = calibPulses;
+  // Odvozený objem (kontrola podle aktuálního K-faktoru):
+  doc["calibration_volume_l"] = (float)calibPulses / PULSES_PER_LITER;
+  doc["pulses_per_liter"] = PULSES_PER_LITER;
+
   TankMeasurement tank = sensorsGetLastTank();
   doc["tank_valid"] = tank.valid;
   doc["tank_distance_cm"] = tank.distance_cm;
@@ -289,6 +297,16 @@ static void handleApiResetStats() {
 }
 
 // ============================================================================
+// POST /api/pulses/reset
+// Vynuluje kalibrační čítač pulzů (pro určení K-faktoru reálným měřením).
+// NEovlivní celkový perzistovaný objem (sensorsGetTotalVolume).
+// ============================================================================
+static void handleApiResetCalibrationPulses() {
+  sensorsResetCalibrationPulses();
+  server.send(200, "application/json", "{\"ok\":true}");
+}
+
+// ============================================================================
 // POST /api/restart
 // ============================================================================
 static void handleApiRestart() {
@@ -331,6 +349,7 @@ void webServerStart() {
   server.on("/api/calibration/reset",  HTTP_POST, handleApiResetCalibration);
   server.on("/api/stats",        HTTP_GET,  handleApiGetStats);
   server.on("/api/stats/reset",  HTTP_POST, handleApiResetStats);
+  server.on("/api/pulses/reset", HTTP_POST, handleApiResetCalibrationPulses);
   server.on("/api/restart",      HTTP_POST, handleApiRestart);
   server.on("/api/wifi/scan",    HTTP_GET,  handleApiWiFiScan);
   

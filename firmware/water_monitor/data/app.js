@@ -86,6 +86,17 @@ async function updateDashboard() {
       $('cal-current-level').textContent = s.tank_level_cm.toFixed(1);
       $('cal-current-volume').textContent = s.tank_volume_l.toFixed(0);
     }
+
+    // Kalibrační čítač pulzů (od posledního resetu / restartu)
+    if (typeof s.calibration_pulses !== 'undefined') {
+      $('cal-pulses').textContent = s.calibration_pulses;
+      $('cal-pulse-volume').textContent = (s.calibration_volume_l || 0).toFixed(3);
+      if (s.pulses_per_liter) {
+        $('cal-current-k').textContent = s.pulses_per_liter.toFixed(0);
+        // K_FACTOR [Hz na L/min] = pulses_per_liter / 60
+        $('cal-current-k-hz').textContent = (s.pulses_per_liter / 60).toFixed(2);
+      }
+    }
   } catch (err) {
     console.error('Dashboard update failed');
   }
@@ -243,6 +254,19 @@ $('btn-reset-cal').addEventListener('click', async () => {
     toast('Kalibrace resetována', 'success');
   } catch (err) {
     toast('Reset selhal', 'error');
+  }
+});
+
+// Reset kalibračního čítače pulzů (pro určení K-faktoru)
+$('btn-reset-pulses').addEventListener('click', async () => {
+  try {
+    await fetchJSON('/api/pulses/reset', {method: 'POST'});
+    // Okamžitě nastavit UI na nulu (než dorazí příští /api/status update)
+    $('cal-pulses').textContent = '0';
+    $('cal-pulse-volume').textContent = '0.000';
+    toast('Čítač pulzů vynulován', 'success');
+  } catch (err) {
+    toast('Reset čítače selhal', 'error');
   }
 });
 
