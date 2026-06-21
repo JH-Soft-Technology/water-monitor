@@ -1,41 +1,38 @@
 # ============================================================================
-# Water Monitor - Helpers, Utility Meters a Template sensors
+# Water Monitor - Helpers a Template sensors (v2.2)
 # ============================================================================
 # Použití:
 #   Vlož celý obsah do configuration.yaml v Home Assistant
 #   Nebo do samostatných souborů a includuj přes !include
-# 
+#
 # Po vložení a uložení:
 #   - Vývojářské nástroje → YAML → Restart
 #   - nebo přímo "Restart Home Assistant"
-# 
-# Co to vytvoří:
-#   - sensor.spotreba_dnes        (denní spotřeba, resetuje se o půlnoci)
-#   - sensor.spotreba_tento_tyden (týdenní spotřeba, reset v pondělí)
-#   - sensor.spotreba_tento_mesic (měsíční spotřeba, reset 1. dne)
-#   - sensor.prumerny_prutok_5min (klouzavý průměr pro detekci úniků)
-#   - sensor.cerpadlo_aktivni     (True pokud teče > 1 L/min)
-#   - sensor.spotreba_predchozi_24h_avg (průměr posledních 24h pro porovnání)
+#
 # ============================================================================
-
-# ----------------------------------------------------------------------------
-# UTILITY METERS - automaticky resetované čítače spotřeby
-# ----------------------------------------------------------------------------
-utility_meter:
-  spotreba_dnes:
-    name: Spotřeba dnes
-    source: sensor.objem_celkem
-    cycle: daily
-    
-  spotreba_tento_tyden:
-    name: Spotřeba tento týden
-    source: sensor.objem_celkem
-    cycle: weekly
-    
-  spotreba_tento_mesic:
-    name: Spotřeba tento měsíc
-    source: sensor.objem_celkem
-    cycle: monthly
+# DŮLEŽITÉ ZMĚNY VE v2.2:
+# ============================================================================
+# Period statistics (dnes/týden/měsíc/rok) jsou teď řízené přímo firmwarem!
+# Firmware používá NTP (CET/CEST) a vždy se resetuje přesně v 00:00.
+#
+# Entity:
+#   sensor.spotreba_dnes         (z MQTT, firmware-managed)
+#   sensor.spotreba_tento_tyden  (z MQTT, firmware-managed)
+#   sensor.spotreba_tento_mesic  (z MQTT, firmware-managed)
+#   sensor.spotreba_tento_rok    (z MQTT, firmware-managed, NOVÉ ve v2.2!)
+#
+# HA utility_meter sekce už NENÍ POTŘEBA - firmware to dělá sám.
+# Pokud jsi měl ve v2.1 utility_meter, můžeš je odstranit.
+# (V této verzi yaml jsou utility_meter úplně vynechány.)
+#
+# Co to vytvoří (jen template a statistics sensors):
+#   - sensor.cerpadlo_aktivni            (True pokud teče > 1 L/min)
+#   - sensor.zbyvajicich_dnu_vody        (odhad dnů zbývajících při aktuální spotřebě)
+#   - sensor.naplneni_litry_kategorie    (textová kategorie naplnění)
+#   - sensor.prumerny_prutok_5min        (klouzavý průměr pro detekci úniků)
+#   - sensor.maximalni_prutok_24h        (max za 24h)
+#   - sensor.prumerna_denni_spotreba_7d  (průměr za 7 dní)
+# ============================================================================
 
 # ----------------------------------------------------------------------------
 # TEMPLATE SENSORS - odvozené hodnoty
@@ -57,7 +54,7 @@ template:
           {% else %}
             mdi:water-pump-off
           {% endif %}
-      
+
       # Kolik dnů zbývá při aktuálním tempu spotřeby
       - name: "Zbývajících dnů vody"
         unique_id: zbyvajicich_dnu_vody
@@ -71,9 +68,9 @@ template:
           {% else %}
             unavailable
           {% endif %}
-      
-      # Procento dešťové vody (předpoklad - kolik z denní spotřeby je z nádrže)
-      - name: "Náplň pro odhad"
+
+      # Textová kategorie naplnění
+      - name: "Naplnění kategorie"
         unique_id: naplneni_litry_kategorie
         state: >
           {% set p = states('sensor.naplneni_nadrze') | float(0) %}
@@ -114,7 +111,7 @@ sensor:
     max_age:
       minutes: 5
     sampling_size: 300
-  
+
   - platform: statistics
     name: "Maximální průtok 24h"
     unique_id: maximalni_prutok_24h
@@ -123,7 +120,7 @@ sensor:
     max_age:
       hours: 24
     sampling_size: 1440
-  
+
   - platform: statistics
     name: "Průměrná denní spotřeba 7 dní"
     unique_id: prumerna_denni_spotreba_7d
