@@ -33,11 +33,12 @@
 // ============================================================================
 // ČASOVÉ INTERVALY (ms)
 // ============================================================================
-#define FLOW_CALC_INTERVAL       1000UL
-#define MINUTE_INTERVAL          60000UL
-#define HOUR_INTERVAL            3600000UL
-#define TANK_MEASURE_INTERVAL    30000UL            // Hladina každých 30s
-#define PERSIST_INTERVAL         600000UL           // Perzistence totalu každých 10 min (ochrana proti výpadku)
+#define FLOW_CALC_INTERVAL              1000UL
+#define MINUTE_INTERVAL                 60000UL
+#define HOUR_INTERVAL                   3600000UL
+#define TANK_MEASURE_INTERVAL           30000UL     // Hladina každých 30s
+#define PERSIST_INTERVAL                600000UL    // Perzistence totalu každých 10 min (ochrana proti výpadku)
+#define PERIOD_STATS_PUBLISH_INTERVAL   60000UL     // Publikuj period stats (today/week/month/year) každou minutu
 
 // ============================================================================
 // ACCESS POINT (setup režim)
@@ -50,10 +51,12 @@
 // ============================================================================
 #define CONFIG_FILE       "/config.json"
 #define CALIBRATION_FILE  "/calibration.json"
+#define STATS_FILE        "/stats.json"             // Period stats akumulátory
+#define HISTORY_FILE      "/history.json"           // Period stats histogramy
 
 // ============================================================================
 // VERZE
 // ============================================================================
-#define FW_VERSION "2.1"
+#define FW_VERSION "2.3"
 
 #endif // CONFIG_H
