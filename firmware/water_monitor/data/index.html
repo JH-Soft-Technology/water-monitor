@@ -130,7 +130,36 @@
       <h2>Kalibrační tabulka</h2>
       
       <div class="card">
-        <h3>Aktuální stav</h3>
+        <h3>🔢 Kalibrace průtokoměru (K-faktor)</h3>
+        <p class="hint">
+          Postup pro ověření K-faktoru senzoru:
+          <br>1. Stiskni <strong>Reset čítače</strong>
+          <br>2. Odčerpej čerpadlem přesné známé množství (např. 10 L do kalibrované konve)
+          <br>3. Vypni čerpadlo, počkej 30 s, odečti počet pulzů
+          <br>4. K-faktor [Hz na L/min] = pulzy / (objem v L × 60)
+        </p>
+        <div class="metric-row">
+          <div class="metric">
+            <span class="metric-label">Pulzů od resetu</span>
+            <span class="metric-value" id="cal-pulses">0</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Odpovídá objemu (podle aktuálního K)</span>
+            <span class="metric-value" id="cal-pulse-volume">0.000</span> L
+          </div>
+        </div>
+        <p class="hint">
+          Aktuální K-faktor v firmwaru: <strong id="cal-current-k">270</strong> pulzů/L
+          (= <span id="cal-current-k-hz">4.5</span> Hz na L/min)
+        </p>
+        <button id="btn-reset-pulses" class="btn-primary">🔄 Reset čítače pulzů</button>
+        <p class="hint" style="margin-top: 8px;">
+          ⚠️ Reset se provede i automaticky při restartu ESP. Nereseturuje celkový objem.
+        </p>
+      </div>
+      
+      <div class="card">
+        <h3>Aktuální stav nádrže</h3>
         <p>Hladina: <strong id="cal-current-level">--</strong> cm</p>
         <p>Vypočtený objem: <strong id="cal-current-volume">--</strong> L</p>
       </div>
