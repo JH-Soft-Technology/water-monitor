@@ -5,6 +5,24 @@ Všechny významné změny v tomto projektu jsou dokumentovány zde.
 Formát vychází z [Keep a Changelog](https://keepachangelog.com/),
 projekt používá [sémantické verzování](https://semver.org/lang/cs/).
 
+## [2.4.0] - 2026
+
+### Přidáno
+- **Backup / restore konfigurace** — ochrana perzistentních dat při flashi
+  filesystemu. Web UI a runtime config sdílí jeden LittleFS oddíl, takže
+  `uploadfs` / OTA pole `filesystem` jinak smaže `config.json`, `calibration.json`,
+  `stats.json` i `history.json`.
+  - `GET /api/backup` — stáhne všechny perzistentní soubory jako jeden JSON
+    (vč. WiFi/MQTT hesel v plaintextu, na rozdíl od `/api/config`).
+  - `POST /api/restore` — zapíše soubory zpět do LittleFS (tělo = výstup z
+    `/api/backup`), vrací `restart_required`.
+  - Doporučený postup při updatu web UI: `GET /api/backup` → zapéct soubory do
+    `data/` před buildem image (zařízení pak zůstane online), nebo flash FS a
+    `POST /api/restore` přes AP režim.
+
+### Změněno
+- **FW_VERSION** `2.3` → `2.4`
+
 ## [2.3.0] - 2026
 
 ### Přidáno
