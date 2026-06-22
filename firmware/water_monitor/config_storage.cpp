@@ -38,6 +38,7 @@ bool configLoad(Config& cfg) {
   cfg.tank_distance_full_cm  = doc["tank_distance_full_cm"]  | 40.0f;
   cfg.tank_distance_empty_cm = doc["tank_distance_empty_cm"] | 213.0f;
   cfg.tank_max_volume_l      = doc["tank_max_volume_l"]      | 5300.0f;
+  cfg.pulses_per_liter       = doc["pulses_per_liter"]       | DEFAULT_PULSES_PER_LITER;
   cfg.pulse_count_total_persisted = doc["pulse_count_total_persisted"] | 0;
   
   return true;
@@ -58,6 +59,7 @@ bool configSave(const Config& cfg) {
   doc["tank_distance_full_cm"]  = cfg.tank_distance_full_cm;
   doc["tank_distance_empty_cm"] = cfg.tank_distance_empty_cm;
   doc["tank_max_volume_l"]      = cfg.tank_max_volume_l;
+  doc["pulses_per_liter"]       = cfg.pulses_per_liter;
   doc["pulse_count_total_persisted"] = cfg.pulse_count_total_persisted;
   
   File f = LittleFS.open(CONFIG_FILE, "w");

@@ -2,6 +2,7 @@
 #define CONFIG_STORAGE_H
 
 #include <Arduino.h>
+#include "config.h"   // DEFAULT_PULSES_PER_LITER
 
 // Struktura uchovávající všechny perzistentní nastavení
 struct Config {
@@ -24,6 +25,9 @@ struct Config {
   float tank_distance_full_cm = 40.0f;
   float tank_distance_empty_cm = 213.0f;
   float tank_max_volume_l = 5300.0f;
+
+  // Průtokoměr - K-faktor (pulzů na litr), kalibrovatelný za běhu přes web UI
+  float pulses_per_liter = DEFAULT_PULSES_PER_LITER;
   
   // Volume_total perzistence (zachová stav přes restart)
   uint32_t pulse_count_total_persisted = 0;
