@@ -13,9 +13,11 @@
 // ============================================================================
 // PRŮTOKOMĚR
 // ============================================================================
-#define K_FACTOR              4.5f                  // Hz na l/min
-#define PULSES_PER_LITER      (K_FACTOR * 60.0f)    // = 270
-#define MIN_PULSE_INTERVAL_US 800UL                 // Debouncing (max 540 Hz)
+// K-faktor je nově runtime konfigurace (config.pulses_per_liter), nastavitelná
+// ve web UI (Konfigurace → Průtokoměr). Tato hodnota je jen VÝCHOZÍ pro nové /
+// nenakonfigurované zařízení. Vztah: K_FACTOR [Hz na L/min] = pulses_per_liter / 60.
+#define DEFAULT_PULSES_PER_LITER 58.5f              // změřeno: ~585 pulzů / 10 L (DN32)
+#define MIN_PULSE_INTERVAL_US    800UL              // Debouncing (max 540 Hz)
 
 // Výpočet průtoku z doby mezi pulzy (místo počítání za sekundu).
 // Ukládáme časové razítko posledních N platných pulzů a průměrujeme periodu.
@@ -57,6 +59,6 @@
 // ============================================================================
 // VERZE
 // ============================================================================
-#define FW_VERSION "2.4"
+#define FW_VERSION "2.6"
 
 #endif // CONFIG_H

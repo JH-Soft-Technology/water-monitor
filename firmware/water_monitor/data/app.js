@@ -62,14 +62,20 @@ async function updateDashboard() {
     
     // Tank
     if (s.tank_valid) {
+      $('tank-warning').style.display = 'none';
       $('tank-fill').style.height = s.tank_fill_percent.toFixed(1) + '%';
       $('tank-percent').textContent = s.tank_fill_percent.toFixed(1) + '%';
       $('tank-volume').textContent = s.tank_volume_l.toFixed(0);
       $('tank-level').textContent = s.tank_level_cm.toFixed(1);
       $('tank-distance').textContent = s.tank_distance_cm.toFixed(1);
     } else {
+      // Senzor nevrací platné měření - nezobrazuj zavádějící (nulové/staré) hodnoty
+      $('tank-warning').style.display = '';
+      $('tank-fill').style.height = '0%';
       $('tank-percent').textContent = '--';
       $('tank-volume').textContent = '--';
+      $('tank-level').textContent = '--';
+      $('tank-distance').textContent = '--';
     }
     
     // System info
@@ -85,6 +91,9 @@ async function updateDashboard() {
     if (s.tank_valid) {
       $('cal-current-level').textContent = s.tank_level_cm.toFixed(1);
       $('cal-current-volume').textContent = s.tank_volume_l.toFixed(0);
+    } else {
+      $('cal-current-level').textContent = '--';
+      $('cal-current-volume').textContent = '--';
     }
 
     // Kalibrační čítač pulzů (od posledního resetu / restartu)
@@ -121,10 +130,34 @@ async function loadConfig() {
     $('cfg-tank-full').value     = c.tank_distance_full_cm || 40;
     $('cfg-tank-empty').value    = c.tank_distance_empty_cm || 213;
     $('cfg-tank-max').value      = c.tank_max_volume_l || 5300;
+    $('cfg-ppl').value           = c.pulses_per_liter || 58.5;
+    updateKfactorDisplay();
   } catch (err) {
     toast('Nelze načíst konfiguraci', 'error');
   }
 }
+
+// K-faktor: zobraz přepočet pulzů/L na Hz na L/min (K = pulzy/L / 60)
+function updateKfactorDisplay() {
+  const ppl = parseFloat($('cfg-ppl').value);
+  $('cfg-kfactor').textContent = (isNaN(ppl) || ppl <= 0) ? '--' : (ppl / 60).toFixed(3);
+}
+
+$('cfg-ppl').addEventListener('input', updateKfactorDisplay);
+
+// Kalkulačka: pulzy + litry → pulzů/L
+$('btn-calc-ppl').addEventListener('click', () => {
+  const p = parseFloat($('cfg-cal-pulses').value);
+  const l = parseFloat($('cfg-cal-liters').value);
+  if (isNaN(p) || isNaN(l) || l <= 0) {
+    toast('Zadej naměřené pulzy i objem (> 0)', 'error');
+    return;
+  }
+  const ppl = p / l;
+  $('cfg-ppl').value = ppl.toFixed(2);
+  updateKfactorDisplay();
+  toast(`Vypočteno: ${ppl.toFixed(2)} pulzů/L — ulož konfiguraci`, 'success');
+});
 
 $('btn-save-config').addEventListener('click', async () => {
   const body = {
@@ -141,7 +174,11 @@ $('btn-save-config').addEventListener('click', async () => {
     tank_distance_empty_cm: parseFloat($('cfg-tank-empty').value),
     tank_max_volume_l:      parseFloat($('cfg-tank-max').value),
   };
-  
+
+  // K-faktor přidej jen pokud je platný (> 0), jinak firmware ponechá současný
+  const ppl = parseFloat($('cfg-ppl').value);
+  if (!isNaN(ppl) && ppl > 0) body.pulses_per_liter = ppl;
+
   try {
     await fetchJSON('/api/config', {
       method: 'POST',
