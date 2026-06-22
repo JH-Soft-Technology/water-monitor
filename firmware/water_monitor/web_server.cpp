@@ -338,6 +338,93 @@ static void handleApiWiFiScan() {
 }
 
 // ============================================================================
+// Záloha / obnova perzistentních souborů z LittleFS
+// ----------------------------------------------------------------------------
+// Web UI (app.js, index.html, style.css) a runtime konfigurace sdílí jeden
+// LittleFS oddíl. Flash filesystemu (uploadfs / OTA pole "filesystem") přepíše
+// celý oddíl, takže config.json, calibration.json i statistiky ZMIZÍ.
+//
+// /api/backup  (GET)  - stáhne všechny perzistentní soubory jako jeden JSON
+// /api/restore (POST) - zapíše je zpět (typicky po flashi FS, nebo zapéci do
+//                       data/ před buildem image, aby zařízení zůstalo online)
+// ============================================================================
+struct BackupFile {
+  const char* key;
+  const char* path;
+};
+
+static const BackupFile BACKUP_FILES[] = {
+  {"config",      CONFIG_FILE},
+  {"calibration", CALIBRATION_FILE},
+  {"stats",       STATS_FILE},
+  {"history",     HISTORY_FILE},
+};
+static const size_t BACKUP_FILE_COUNT = sizeof(BACKUP_FILES) / sizeof(BACKUP_FILES[0]);
+
+static String readFileRaw(const char* path) {
+  if (!LittleFS.exists(path)) return String();
+  File f = LittleFS.open(path, "r");
+  if (!f) return String();
+  String s = f.readString();
+  f.close();
+  return s;
+}
+
+// GET /api/backup - vrátí {"config":"<raw>", "calibration":"<raw>", ...}
+// Pozn.: obsahuje WiFi/MQTT hesla v plaintextu (na rozdíl od /api/config).
+static void handleApiBackup() {
+  DynamicJsonDocument doc(8192);
+  for (size_t i = 0; i < BACKUP_FILE_COUNT; i++) {
+    String raw = readFileRaw(BACKUP_FILES[i].path);
+    if (raw.length() > 0) {
+      doc[BACKUP_FILES[i].key] = raw;  // raw JSON text jako string (zachová formát)
+    }
+  }
+  String response;
+  serializeJson(doc, response);
+  server.send(200, "application/json", response);
+}
+
+// POST /api/restore - tělo = výstup z /api/backup; zapíše soubory zpět do LittleFS
+static void handleApiRestore() {
+  if (!server.hasArg("plain")) {
+    server.send(400, "text/plain", "Missing body");
+    return;
+  }
+
+  DynamicJsonDocument doc(8192);
+  if (deserializeJson(doc, server.arg("plain"))) {
+    server.send(400, "text/plain", "Invalid JSON");
+    return;
+  }
+
+  int restored = 0;
+  for (size_t i = 0; i < BACKUP_FILE_COUNT; i++) {
+    if (!doc.containsKey(BACKUP_FILES[i].key)) continue;
+    String raw = doc[BACKUP_FILES[i].key].as<String>();
+    if (raw.length() == 0) continue;
+
+    File f = LittleFS.open(BACKUP_FILES[i].path, "w");
+    if (!f) continue;
+    f.print(raw);
+    f.close();
+    restored++;
+  }
+
+  if (restored > 0) {
+    StaticJsonDocument<96> resp;
+    resp["status"] = "ok";
+    resp["restored"] = restored;
+    resp["restart_required"] = true;
+    String out;
+    serializeJson(resp, out);
+    server.send(200, "application/json", out);
+  } else {
+    server.send(400, "text/plain", "Nothing to restore");
+  }
+}
+
+// ============================================================================
 void webServerStart() {
   // API endpoints
   server.on("/api/status",       HTTP_GET,  handleApiStatus);
@@ -350,6 +437,8 @@ void webServerStart() {
   server.on("/api/stats",        HTTP_GET,  handleApiGetStats);
   server.on("/api/stats/reset",  HTTP_POST, handleApiResetStats);
   server.on("/api/pulses/reset", HTTP_POST, handleApiResetCalibrationPulses);
+  server.on("/api/backup",       HTTP_GET,  handleApiBackup);
+  server.on("/api/restore",      HTTP_POST, handleApiRestore);
   server.on("/api/restart",      HTTP_POST, handleApiRestart);
   server.on("/api/wifi/scan",    HTTP_GET,  handleApiWiFiScan);
   

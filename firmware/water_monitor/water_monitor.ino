@@ -1,14 +1,16 @@
 /*
  * ============================================================================
- * Water Monitor v2.3 - Wemos D1 Mini
+ * Water Monitor v2.4 - Wemos D1 Mini
  * ============================================================================
- * 
+ *
  * Kompletní řešení monitoringu vody:
  *  - Měření průtoku (DN32 + PC817 optočlen)
  *  - Měření hladiny v nádrži (JSN-SR04T)
  *  - Statistika spotřeby za den/týden/měsíc/rok (NTP CET/CEST)
  *  - MQTT publikace + Home Assistant auto-discovery
  *  - Webové UI pro konfiguraci, kalibraci, grafy a OTA update
+ *  - Backup/restore konfigurace (/api/backup, /api/restore) - ochrana dat
+ *    při flashi filesystemu (jinak by se config.json/kalibrace smazaly)
  *  - Duální režim: STA (běžný provoz) + AP (vždy dostupný setup)
  *  - LittleFS perzistentní úložiště konfigurace a statistik
  * 
@@ -72,7 +74,7 @@ unsigned long lastStatsPublish = 0;
 void setup() {
   Serial.begin(115200);
   delay(100);
-  Serial.println("\n\n=== Water Monitor v2.3 ===");
+  Serial.println("\n\n=== Water Monitor v2.4 ===");
   
   // 1. Inicializace LittleFS
   if (!LittleFS.begin()) {
