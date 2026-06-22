@@ -69,8 +69,8 @@ static void handleApiStatus() {
   uint32_t calibPulses = sensorsGetCalibrationPulses();
   doc["calibration_pulses"] = calibPulses;
   // Odvozený objem (kontrola podle aktuálního K-faktoru):
-  doc["calibration_volume_l"] = (float)calibPulses / PULSES_PER_LITER;
-  doc["pulses_per_liter"] = PULSES_PER_LITER;
+  doc["calibration_volume_l"] = (float)calibPulses / config.pulses_per_liter;
+  doc["pulses_per_liter"] = config.pulses_per_liter;
 
   TankMeasurement tank = sensorsGetLastTank();
   doc["tank_valid"] = tank.valid;
@@ -111,7 +111,8 @@ static void handleApiGetConfig() {
   doc["tank_distance_full_cm"]  = config.tank_distance_full_cm;
   doc["tank_distance_empty_cm"] = config.tank_distance_empty_cm;
   doc["tank_max_volume_l"]      = config.tank_max_volume_l;
-  
+  doc["pulses_per_liter"]       = config.pulses_per_liter;
+
   String response;
   serializeJson(doc, response);
   server.send(200, "application/json", response);
@@ -152,6 +153,10 @@ static void handleApiSetConfig() {
   if (doc.containsKey("tank_distance_full_cm"))  config.tank_distance_full_cm  = doc["tank_distance_full_cm"];
   if (doc.containsKey("tank_distance_empty_cm")) config.tank_distance_empty_cm = doc["tank_distance_empty_cm"];
   if (doc.containsKey("tank_max_volume_l"))      config.tank_max_volume_l      = doc["tank_max_volume_l"];
+  if (doc.containsKey("pulses_per_liter")) {
+    float ppl = doc["pulses_per_liter"];
+    if (ppl > 0.0f) config.pulses_per_liter = ppl;  // ochrana proti dělení nulou
+  }
   
   if (configSave(config)) {
     server.send(200, "application/json", "{\"status\":\"ok\",\"restart_required\":true}");

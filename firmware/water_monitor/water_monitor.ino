@@ -224,9 +224,8 @@ void loop() {
     lastTankMeasure = now;
 
     TankMeasurement tank;
-    if (sensorsMeasureTank(tank)) {
-      mqttPublishTank(tank);
-    }
+    sensorsMeasureTank(tank);   // při neúspěchu nastaví tank.valid = false
+    mqttPublishTank(tank);      // publikuje hodnoty, nebo "offline" do tank/status
   }
 
   // ---- Každých 10 min: perzistence celkového čítače (ochrana proti výpadku) ----

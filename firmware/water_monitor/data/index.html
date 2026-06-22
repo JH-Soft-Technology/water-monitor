@@ -43,6 +43,10 @@
       
       <div class="card">
         <h3>Nádrž</h3>
+        <div id="tank-warning" class="tank-warning" style="display:none">
+          ⚠️ Senzor hladiny nevrací platné měření. Možné příčiny: hladina je v mrtvé
+          zóně senzoru (blíž než ~20 cm), výpadek napájení nebo odpojený senzor.
+        </div>
         <div class="tank-visual">
           <div class="tank-outer">
             <div class="tank-fill" id="tank-fill" style="height: 0%"></div>
@@ -120,7 +124,31 @@
           <input type="number" id="cfg-tank-max">
         </label>
       </div>
-      
+
+      <div class="card">
+        <h3>Průtokoměr - kalibrace (K-faktor)</h3>
+        <label>Pulzů na litr [pulzy/L]
+          <input type="number" id="cfg-ppl" step="0.01">
+        </label>
+        <p class="hint">= <strong id="cfg-kfactor">--</strong> Hz na L/min</p>
+        <p class="hint" style="margin-top:0.75rem">
+          🧮 Dopočítat z měření: v záložce <strong>Kalibrace</strong> vynuluj čítač,
+          odčerpej známé množství (např. 100 L), odečti pulzy a zadej je sem:
+        </p>
+        <div class="metric-row">
+          <label style="flex:1">Naměřené pulzy
+            <input type="number" id="cfg-cal-pulses" step="1">
+          </label>
+          <label style="flex:1">Odpovídající objem [L]
+            <input type="number" id="cfg-cal-liters" step="0.1">
+          </label>
+        </div>
+        <button type="button" id="btn-calc-ppl">🧮 Vypočítat pulzy/L</button>
+        <p class="hint" style="margin-top:0.5rem">
+          Po výpočtu nezapomeň uložit konfiguraci tlačítkem níže.
+        </p>
+      </div>
+
       <button id="btn-save-config" class="btn-primary">💾 Uložit konfiguraci</button>
       <p class="hint">Po uložení je doporučen restart (Systém → Restartovat)</p>
     </section>
@@ -149,8 +177,9 @@
           </div>
         </div>
         <p class="hint">
-          Aktuální K-faktor v firmwaru: <strong id="cal-current-k">270</strong> pulzů/L
-          (= <span id="cal-current-k-hz">4.5</span> Hz na L/min)
+          Aktuální K-faktor: <strong id="cal-current-k">--</strong> pulzů/L
+          (= <span id="cal-current-k-hz">--</span> Hz na L/min).
+          Nastavíš ho v záložce <strong>Konfigurace → Průtokoměr</strong>.
         </p>
         <button id="btn-reset-pulses" class="btn-primary">🔄 Reset čítače pulzů</button>
         <p class="hint" style="margin-top: 8px;">
