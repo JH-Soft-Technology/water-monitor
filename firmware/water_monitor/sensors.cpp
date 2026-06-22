@@ -74,7 +74,7 @@ void sensorsInit() {
   sonar = new NewPing(ULTRASONIC_TRIG, ULTRASONIC_ECHO, MAX_DISTANCE_CM);
   
   Serial.printf("Senzory init: total pulses = %u (= %.3f L)\n",
-                pulseCountTotal, pulseCountTotal / PULSES_PER_LITER);
+                pulseCountTotal, pulseCountTotal / config.pulses_per_liter);
 }
 
 // ============================================================================
@@ -107,7 +107,7 @@ float sensorsCalculateFlow(unsigned long /*elapsed_ms*/) {
   if (n < 2) {
     uint32_t elapsed = micros() - lastTs;
     if (elapsed >= 200000UL) {  // počkej aspoň 200 ms
-      lastFlowLpm = (1000000.0f / (float)elapsed) / K_FACTOR;
+      lastFlowLpm = (1000000.0f / (float)elapsed) / (config.pulses_per_liter / 60.0f);
       Serial.printf("[FLOW] 1 pulz, elapsed %lu µs → odhad %.3f L/min\n",
                     elapsed, lastFlowLpm);
     }
@@ -124,7 +124,7 @@ float sensorsCalculateFlow(unsigned long /*elapsed_ms*/) {
 
   // průměrná frekvence = (n-1) intervalů / celkový čas v sekundách
   float freqHz   = (float)(n - 1) * 1000000.0f / (float)span;
-  lastFlowLpm    = freqHz / K_FACTOR;
+  lastFlowLpm    = freqHz / (config.pulses_per_liter / 60.0f);
 
   Serial.printf("[FLOW] %u pulzů, span %lu µs → %.3f Hz → %.3f L/min\n",
                 n, span, freqHz, lastFlowLpm);
@@ -140,8 +140,8 @@ void sensorsGetMinuteVolume(float& volume_minute_l, float& volume_total_l) {
   uint32_t pulsesTotal = pulseCountTotal;
   interrupts();
   
-  volume_minute_l = (float)pulsesMin / PULSES_PER_LITER;
-  volume_total_l  = (float)pulsesTotal / PULSES_PER_LITER;
+  volume_minute_l = (float)pulsesMin / config.pulses_per_liter;
+  volume_total_l  = (float)pulsesTotal / config.pulses_per_liter;
 }
 
 // ============================================================================
@@ -151,7 +151,7 @@ float sensorsGetHourVolume() {
   pulseCountHour = 0;
   interrupts();
 
-  return (float)pulsesHour / PULSES_PER_LITER;
+  return (float)pulsesHour / config.pulses_per_liter;
 }
 
 // ============================================================================
@@ -172,7 +172,7 @@ float sensorsGetTotalVolume() {
   uint32_t pulsesTotal = pulseCountTotal;
   interrupts();
   
-  return (float)pulsesTotal / PULSES_PER_LITER;
+  return (float)pulsesTotal / config.pulses_per_liter;
 }
 
 // ============================================================================

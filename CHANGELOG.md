@@ -5,6 +5,40 @@ Všechny významné změny v tomto projektu jsou dokumentovány zde.
 Formát vychází z [Keep a Changelog](https://keepachangelog.com/),
 projekt používá [sémantické verzování](https://semver.org/lang/cs/).
 
+## [2.6.0] - 2026
+
+### Přidáno
+- **Konfigurovatelný K-faktor průtokoměru** — dříve napevno v `config.h`
+  (`K_FACTOR`/`PULSES_PER_LITER`), nově runtime hodnota `pulses_per_liter`
+  v `Config` (perzistentní v `config.json`), nastavitelná ve web UI bez reflashe:
+  - Konfigurace → **Průtokoměr - kalibrace (K-faktor)**: přímé pole „pulzů/L"
+    + kalkulačka „naměřené pulzy + objem [L] → pulzů/L" (např. odčerpat 100 L,
+    zadat změřené pulzy a 100 L).
+  - `GET/POST /api/config` nově obsahuje `pulses_per_liter` (POST validuje > 0).
+  - Výchozí hodnota `DEFAULT_PULSES_PER_LITER = 58.5` (změřeno ~585 pulzů / 10 L
+    na DN32; předchozí 270 platilo pro menší senzor a podhodnocovalo objemy ~4,6×).
+
+### Změněno
+- **FW_VERSION** `2.5` → `2.6`
+- `K_FACTOR` [Hz na L/min] se nově odvozuje jako `pulses_per_liter / 60`.
+
+## [2.5.0] - 2026
+
+### Přidáno
+- **Signalizace neplatného měření hladiny** — když ultrazvuk (JSN-SR04T) nevrací
+  platné echo (hladina v mrtvé zóně < ~20 cm, výpadek napájení nebo odpojený
+  senzor), zařízení už neukazuje zavádějící poslední/nulovou hodnotu:
+  - **MQTT / Home Assistant**: nový availability topic `<device_id>/tank/status`
+    (`online`/`offline`, retained). Tank senzory (vzdálenost, hladina, objem,
+    naplnění) používají `availability_mode: all` přes `<device_id>/status` +
+    `tank/status`, takže v HA zešednou na *unavailable* místo zamrzlé hodnoty.
+  - **Web UI**: žluté varování v kartě Nádrž + všechny hodnoty nádrže přepnuté
+    na `--` (vč. záložky Kalibrace).
+  - `mqttPublishTank()` se nově volá i při neúspěšném měření (publikuje `offline`).
+
+### Změněno
+- **FW_VERSION** `2.4` → `2.5`
+
 ## [2.4.0] - 2026
 
 ### Přidáno

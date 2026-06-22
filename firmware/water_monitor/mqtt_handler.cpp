@@ -20,6 +20,7 @@ static String topicLevel;
 static String topicVolume;
 static String topicPercent;
 static String topicStatus;
+static String topicTankStatus;   // availability tank senzorů (online/offline dle platnosti měření)
 // Period statistics
 static String topicConsumptionToday;
 static String topicConsumptionWeek;
@@ -42,6 +43,7 @@ static void buildTopics() {
   topicVolume   = base + "/tank/volume_liters";
   topicPercent  = base + "/tank/fill_percent";
   topicStatus   = base + "/status";
+  topicTankStatus = base + "/tank/status";
   // Period stats - skupina "consumption" (spotřeba)
   topicConsumptionToday = base + "/consumption/today";
   topicConsumptionWeek  = base + "/consumption/week";
@@ -71,10 +73,11 @@ static void publishHADiscoverySensor(
     const char* deviceClass,
     const char* stateClass,
     const char* icon,
-    int precision
+    int precision,
+    bool tankSensor = false
 ) {
-  StaticJsonDocument<512> doc;
-  
+  StaticJsonDocument<768> doc;
+
   doc["name"] = friendlyName;
   doc["unique_id"] = config.device_id + "_" + objectId;
   doc["state_topic"] = stateTopic;
@@ -83,23 +86,40 @@ static void publishHADiscoverySensor(
   if (strlen(stateClass) > 0) doc["state_class"] = stateClass;
   if (strlen(icon) > 0) doc["icon"] = icon;
   doc["suggested_display_precision"] = precision;
-  doc["availability_topic"] = topicStatus;
-  doc["payload_available"] = "online";
-  doc["payload_not_available"] = "offline";
-  
+
+  if (tankSensor) {
+    // Tank senzory jsou v HA "unavailable" když je zařízení offline NEBO když
+    // ultrazvuk nevrací platné měření (hladina v mrtvé zóně, výpadek/odpojení
+    // senzoru). Bez toho by HA navždy ukazoval poslední přijatou hodnotu.
+    doc["availability_mode"] = "all";
+    JsonArray avail = doc.createNestedArray("availability");
+    JsonObject aDev = avail.createNestedObject();
+    aDev["topic"] = topicStatus;
+    aDev["payload_available"] = "online";
+    aDev["payload_not_available"] = "offline";
+    JsonObject aTank = avail.createNestedObject();
+    aTank["topic"] = topicTankStatus;
+    aTank["payload_available"] = "online";
+    aTank["payload_not_available"] = "offline";
+  } else {
+    doc["availability_topic"] = topicStatus;
+    doc["payload_available"] = "online";
+    doc["payload_not_available"] = "offline";
+  }
+
   JsonObject device = doc.createNestedObject("device");
   device["identifiers"] = config.device_id;
   device["name"] = config.device_name;
   device["model"] = "ESP8266 + DN32 + JSN-SR04T";
   device["manufacturer"] = "DIY";
   device["sw_version"] = FW_VERSION;
-  
+
   String configTopic = String("homeassistant/sensor/") + config.device_id + "_" + objectId + "/config";
-  
-  char buffer[768];
+
+  char buffer[896];
   size_t n = serializeJson(doc, buffer);
   mqttClient.publish(configTopic.c_str(), buffer, true);  // retained
-  
+
   Serial.printf("HA discovery: %s (%d bytes)\n", objectId, n);
 }
 
@@ -116,15 +136,15 @@ static void publishHomeAssistantDiscovery() {
   publishHADiscoverySensor("volume_total",  "Objem celkem",     topicVolTotal,
                            "L", "water", "total_increasing", "mdi:counter", 3);
 
-  // ---- Tank ----
+  // ---- Tank ---- (tankSensor=true → availability i podle platnosti měření)
   publishHADiscoverySensor("distance_cm",   "Vzdálenost senzor", topicDistance,
-                           "cm", "distance", "measurement", "mdi:arrow-up-down", 1);
+                           "cm", "distance", "measurement", "mdi:arrow-up-down", 1, true);
   publishHADiscoverySensor("level_cm",      "Hladina v nádrži", topicLevel,
-                           "cm", "distance", "measurement", "mdi:waves-arrow-up", 1);
+                           "cm", "distance", "measurement", "mdi:waves-arrow-up", 1, true);
   publishHADiscoverySensor("volume_liters", "Objem v nádrži",   topicVolume,
-                           "L", "water", "measurement", "mdi:cup-water", 0);
+                           "L", "water", "measurement", "mdi:cup-water", 0, true);
   publishHADiscoverySensor("fill_percent",  "Naplnění nádrže",  topicPercent,
-                           "%", "", "measurement", "mdi:gauge", 1);
+                           "%", "", "measurement", "mdi:gauge", 1, true);
 
   // ---- Period statistics (spotřeba) ----
   // Pozn.: NEpoužíváme device_class "water" + state_class "total_increasing",
@@ -160,6 +180,9 @@ static bool tryConnect() {
   if (connected) {
     Serial.println("OK");
     mqttClient.publish(topicStatus.c_str(), "online", true);
+    // Tank začíná jako "offline" - online ho nastaví až první platné měření.
+    // Brání tomu, aby HA po reconnectu ukazoval zamrzlou starou hodnotu.
+    mqttClient.publish(topicTankStatus.c_str(), "offline", true);
     publishHomeAssistantDiscovery();
     return true;
   } else {
@@ -203,7 +226,16 @@ void mqttPublishHourVolume(float volume_hour) {
 }
 
 void mqttPublishTank(const TankMeasurement& tank) {
-  if (!tank.valid) return;
+  if (!mqttClient.connected()) return;
+
+  if (!tank.valid) {
+    // Senzor nevrací platné měření → označ tank entity v HA jako nedostupné.
+    // Hodnoty se nepublikují, takže HA nedrží zamrzlou poslední hodnotu.
+    mqttClient.publish(topicTankStatus.c_str(), "offline", true);
+    return;
+  }
+
+  mqttClient.publish(topicTankStatus.c_str(), "online", true);
   publishFloat(topicDistance, tank.distance_cm, 1);
   publishFloat(topicLevel, tank.level_cm, 1);
   publishFloat(topicVolume, tank.volume_l, 0);
