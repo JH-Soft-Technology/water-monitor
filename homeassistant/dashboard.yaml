@@ -11,18 +11,18 @@
 # Předpoklady:
 #   - MQTT integration je aktivní v HA
 #   - ESP s firmware v2.2+ posílá MQTT discovery, takže máš entity:
-#       sensor.prutok_aktualni         (live průtok L/min)
-#       sensor.objem_za_minutu         (last minute L)
-#       sensor.objem_za_hodinu         (last hour L)
-#       sensor.objem_celkem            (kumulativní L od startu)
-#       sensor.vzdalenost_senzor       (cm)
-#       sensor.hladina_v_nadrzi        (cm)
-#       sensor.objem_v_nadrzi          (L)
-#       sensor.naplneni_nadrze         (%)
-#       sensor.spotreba_dnes           (firmware-managed denní spotřeba)
-#       sensor.spotreba_tento_tyden    (firmware-managed týdenní spotřeba)
-#       sensor.spotreba_tento_mesic    (firmware-managed měsíční spotřeba)
-#       sensor.spotreba_tento_rok      (firmware-managed roční spotřeba)
+#       sensor.water_tank_prutok_aktualni         (live průtok L/min)
+#       sensor.water_tank_objem_za_minutu         (last minute L)
+#       sensor.water_tank_objem_za_hodinu         (last hour L)
+#       sensor.water_tank_objem_celkem            (kumulativní L od startu)
+#       sensor.water_tank_vzdalenost_senzor       (cm)
+#       sensor.water_tank_hladina_v_nadrzi        (cm)
+#       sensor.water_tank_objem_v_nadrzi          (L)
+#       sensor.water_tank_naplneni_nadrze         (%)
+#       sensor.water_tank_spotreba_dnes           (firmware-managed denní spotřeba)
+#       sensor.water_tank_spotreba_tento_tyden    (firmware-managed týdenní spotřeba)
+#       sensor.water_tank_spotreba_tento_mesic    (firmware-managed měsíční spotřeba)
+#       sensor.water_tank_spotreba_tento_rok      (firmware-managed roční spotřeba)
 #
 # Pozn.: Period stats (today/week/month/year) jsou teď řízené přímo firmwarem
 #   přes NTP - resetují se vždy v 00:00 CET/CEST. Není potřeba HA utility_meter.
@@ -51,7 +51,7 @@ views:
             heading_style: title
 
           - type: gauge
-            entity: sensor.naplneni_nadrze
+            entity: sensor.water_tank_naplneni_nadrze
             name: Naplnění
             unit: '%'
             min: 0
@@ -66,13 +66,13 @@ views:
             title: Detaily nádrže
             show_header_toggle: false
             entities:
-              - entity: sensor.objem_v_nadrzi
+              - entity: sensor.water_tank_objem_v_nadrzi
                 name: Objem v nádrži
                 icon: mdi:cup-water
-              - entity: sensor.hladina_v_nadrzi
+              - entity: sensor.water_tank_hladina_v_nadrzi
                 name: Výška hladiny
                 icon: mdi:waves-arrow-up
-              - entity: sensor.vzdalenost_senzor
+              - entity: sensor.water_tank_vzdalenost_senzor
                 name: Vzdálenost od senzoru
                 icon: mdi:arrow-up-down
 
@@ -87,7 +87,7 @@ views:
             heading_style: title
 
           - type: gauge
-            entity: sensor.prutok_aktualni
+            entity: sensor.water_tank_prutok_aktualni
             name: Aktuální průtok
             unit: 'L/min'
             min: 0
@@ -102,13 +102,13 @@ views:
             title: Objemy
             show_header_toggle: false
             entities:
-              - entity: sensor.objem_za_minutu
+              - entity: sensor.water_tank_objem_za_minutu
                 name: Za poslední minutu
                 icon: mdi:water
-              - entity: sensor.objem_za_hodinu
+              - entity: sensor.water_tank_objem_za_hodinu
                 name: Za poslední hodinu
                 icon: mdi:water
-              - entity: sensor.objem_celkem
+              - entity: sensor.water_tank_objem_celkem
                 name: Celkem od startu
                 icon: mdi:counter
 
@@ -126,16 +126,16 @@ views:
             title: Souhrny období
             show_header_toggle: false
             entities:
-              - entity: sensor.spotreba_dnes
+              - entity: sensor.water_tank_spotreba_dnes
                 name: Dnes
                 icon: mdi:calendar-today
-              - entity: sensor.spotreba_tento_tyden
+              - entity: sensor.water_tank_spotreba_tento_tyden
                 name: Tento týden
                 icon: mdi:calendar-week
-              - entity: sensor.spotreba_tento_mesic
+              - entity: sensor.water_tank_spotreba_tento_mesic
                 name: Tento měsíc
                 icon: mdi:calendar-month
-              - entity: sensor.spotreba_tento_rok
+              - entity: sensor.water_tank_spotreba_tento_rok
                 name: Tento rok
                 icon: mdi:calendar
 
@@ -146,16 +146,16 @@ views:
             show_name: true
             show_icon: true
             entities:
-              - entity: sensor.spotreba_dnes
+              - entity: sensor.water_tank_spotreba_dnes
                 name: Den
                 icon: mdi:calendar-today
-              - entity: sensor.spotreba_tento_tyden
+              - entity: sensor.water_tank_spotreba_tento_tyden
                 name: Týden
                 icon: mdi:calendar-week
-              - entity: sensor.spotreba_tento_mesic
+              - entity: sensor.water_tank_spotreba_tento_mesic
                 name: Měsíc
                 icon: mdi:calendar-month
-              - entity: sensor.spotreba_tento_rok
+              - entity: sensor.water_tank_spotreba_tento_rok
                 name: Rok
                 icon: mdi:calendar
 
@@ -174,7 +174,7 @@ views:
             hours_to_show: 24
             refresh_interval: 60
             entities:
-              - entity: sensor.prutok_aktualni
+              - entity: sensor.water_tank_prutok_aktualni
                 name: Průtok L/min
 
       # ======================================================================
@@ -192,9 +192,9 @@ views:
             hours_to_show: 168
             refresh_interval: 600
             entities:
-              - entity: sensor.naplneni_nadrze
+              - entity: sensor.water_tank_naplneni_nadrze
                 name: Naplnění %
-              - entity: sensor.objem_v_nadrzi
+              - entity: sensor.water_tank_objem_v_nadrzi
                 name: Objem L
 
       # ======================================================================
@@ -216,7 +216,7 @@ views:
             stat_types:
               - max
             entities:
-              - sensor.spotreba_dnes
+              - sensor.water_tank_spotreba_dnes
 
           # Týdenní spotřeba za posledních ~12 týdnů
           - type: statistics-graph
@@ -227,7 +227,7 @@ views:
             stat_types:
               - max
             entities:
-              - sensor.spotreba_tento_tyden
+              - sensor.water_tank_spotreba_tento_tyden
 
           # Měsíční spotřeba za posledních 12 měsíců
           - type: statistics-graph
@@ -238,7 +238,7 @@ views:
             stat_types:
               - max
             entities:
-              - sensor.spotreba_tento_mesic
+              - sensor.water_tank_spotreba_tento_mesic
 
           # Roční spotřeba (vícero roků)
           - type: statistics-graph
@@ -249,7 +249,7 @@ views:
             stat_types:
               - max
             entities:
-              - sensor.spotreba_tento_rok
+              - sensor.water_tank_spotreba_tento_rok
 
       # ======================================================================
       # SEKCE 7: SYSTÉM
@@ -267,7 +267,7 @@ views:
             entities:
               - type: section
                 label: Konfigurace
-              - entity: sensor.watertank_status
+              - entity: sensor.water_tank_status
                 name: Online stav
                 icon: mdi:connection
               - type: weblink
