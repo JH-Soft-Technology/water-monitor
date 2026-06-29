@@ -16,22 +16,22 @@
 # Firmware používá NTP (CET/CEST) a vždy se resetuje přesně v 00:00.
 #
 # Entity:
-#   sensor.spotreba_dnes         (z MQTT, firmware-managed)
-#   sensor.spotreba_tento_tyden  (z MQTT, firmware-managed)
-#   sensor.spotreba_tento_mesic  (z MQTT, firmware-managed)
-#   sensor.spotreba_tento_rok    (z MQTT, firmware-managed, NOVÉ ve v2.2!)
+#   sensor.water_tank_spotreba_dnes         (z MQTT, firmware-managed)
+#   sensor.water_tank_spotreba_tento_tyden  (z MQTT, firmware-managed)
+#   sensor.water_tank_spotreba_tento_mesic  (z MQTT, firmware-managed)
+#   sensor.water_tank_spotreba_tento_rok    (z MQTT, firmware-managed, NOVÉ ve v2.2!)
 #
 # HA utility_meter sekce už NENÍ POTŘEBA - firmware to dělá sám.
 # Pokud jsi měl ve v2.1 utility_meter, můžeš je odstranit.
 # (V této verzi yaml jsou utility_meter úplně vynechány.)
 #
 # Co to vytvoří (jen template a statistics sensors):
-#   - sensor.cerpadlo_aktivni            (True pokud teče > 1 L/min)
-#   - sensor.zbyvajicich_dnu_vody        (odhad dnů zbývajících při aktuální spotřebě)
-#   - sensor.naplneni_litry_kategorie    (textová kategorie naplnění)
-#   - sensor.prumerny_prutok_5min        (klouzavý průměr pro detekci úniků)
-#   - sensor.maximalni_prutok_24h        (max za 24h)
-#   - sensor.prumerna_denni_spotreba_7d  (průměr za 7 dní)
+#   - sensor.water_tank_cerpadlo_aktivni            (True pokud teče > 1 L/min)
+#   - sensor.water_tank_zbyvajicich_dnu_vody        (odhad dnů zbývajících při aktuální spotřebě)
+#   - sensor.water_tank_naplneni_litry_kategorie    (textová kategorie naplnění)
+#   - sensor.water_tank_prumerny_prutok_5min        (klouzavý průměr pro detekci úniků)
+#   - sensor.water_tank_maximalni_prutok_24h        (max za 24h)
+#   - sensor.water_tank_prumerna_denni_spotreba_7d  (průměr za 7 dní)
 # ============================================================================
 
 # ----------------------------------------------------------------------------
@@ -41,15 +41,15 @@ template:
   - sensor:
       # Indikace, jestli čerpadlo právě teče
       - name: "Čerpadlo aktivní"
-        unique_id: cerpadlo_aktivni
+        unique_id: water_tank_cerpadlo_aktivni
         state: >
-          {% if states('sensor.prutok_aktualni') | float(0) > 1.0 %}
+          {% if states('sensor.water_tank_prutok_aktualni') | float(0) > 1.0 %}
             on
           {% else %}
             off
           {% endif %}
         icon: >
-          {% if states('sensor.prutok_aktualni') | float(0) > 1.0 %}
+          {% if states('sensor.water_tank_prutok_aktualni') | float(0) > 1.0 %}
             mdi:water-pump
           {% else %}
             mdi:water-pump-off
@@ -57,12 +57,12 @@ template:
 
       # Kolik dnů zbývá při aktuálním tempu spotřeby
       - name: "Zbývajících dnů vody"
-        unique_id: zbyvajicich_dnu_vody
+        unique_id: water_tank_zbyvajicich_dnu_vody
         unit_of_measurement: "dní"
         icon: mdi:calendar-clock
         state: >
-          {% set objem = states('sensor.objem_v_nadrzi') | float(0) %}
-          {% set denni_spotreba = states('sensor.spotreba_dnes') | float(0) %}
+          {% set objem = states('sensor.water_tank_objem_v_nadrzi') | float(0) %}
+          {% set denni_spotreba = states('sensor.water_tank_spotreba_dnes') | float(0) %}
           {% if denni_spotreba > 0.1 %}
             {{ (objem / denni_spotreba) | round(0) }}
           {% else %}
@@ -71,9 +71,9 @@ template:
 
       # Textová kategorie naplnění
       - name: "Naplnění kategorie"
-        unique_id: naplneni_litry_kategorie
+        unique_id: water_tank_naplneni_litry_kategorie
         state: >
-          {% set p = states('sensor.naplneni_nadrze') | float(0) %}
+          {% set p = states('sensor.water_tank_naplneni_nadrze') | float(0) %}
           {% if p > 75 %}
             Plná
           {% elif p > 50 %}
@@ -86,7 +86,7 @@ template:
             Kriticky málo
           {% endif %}
         icon: >
-          {% set p = states('sensor.naplneni_nadrze') | float(0) %}
+          {% set p = states('sensor.water_tank_naplneni_nadrze') | float(0) %}
           {% if p > 75 %}
             mdi:water
           {% elif p > 50 %}
@@ -105,8 +105,8 @@ template:
 sensor:
   - platform: statistics
     name: "Průměrný průtok 5 min"
-    unique_id: prumerny_prutok_5min
-    entity_id: sensor.prutok_aktualni
+    unique_id: water_tank_prumerny_prutok_5min
+    entity_id: sensor.water_tank_prutok_aktualni
     state_characteristic: mean
     max_age:
       minutes: 5
@@ -114,8 +114,8 @@ sensor:
 
   - platform: statistics
     name: "Maximální průtok 24h"
-    unique_id: maximalni_prutok_24h
-    entity_id: sensor.prutok_aktualni
+    unique_id: water_tank_maximalni_prutok_24h
+    entity_id: sensor.water_tank_prutok_aktualni
     state_characteristic: value_max
     max_age:
       hours: 24
@@ -123,8 +123,8 @@ sensor:
 
   - platform: statistics
     name: "Průměrná denní spotřeba 7 dní"
-    unique_id: prumerna_denni_spotreba_7d
-    entity_id: sensor.spotreba_dnes
+    unique_id: water_tank_prumerna_denni_spotreba_7d
+    entity_id: sensor.water_tank_spotreba_dnes
     state_characteristic: mean
     max_age:
       days: 7
