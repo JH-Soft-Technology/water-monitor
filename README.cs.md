@@ -237,3 +237,7 @@ Pull requesty a issue jsou vítány. Projekt vznikl pro konkrétní instalaci (d
 - [ESP8266 Arduino Core](https://github.com/esp8266/Arduino)
 - Knihovny PubSubClient, ArduinoJson, NewPing
 - Home Assistant a jeho MQTT discovery
+
+---
+
+[![buy me a coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/jhoralek)
