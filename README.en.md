@@ -248,3 +248,7 @@ Pull requests and issues are welcome. The project was created for a specific ins
 - [ESP8266 Arduino Core](https://github.com/esp8266/Arduino)
 - PubSubClient, ArduinoJson, NewPing libraries
 - Home Assistant and its MQTT discovery
+
+---
+
+[![buy me a coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/jhoralek)
